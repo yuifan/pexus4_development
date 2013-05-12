@@ -131,6 +131,17 @@ class AdbInterface:
       logger.Log("ADB Pull Failed: Source file %s does not exist." % src)
       return False
 
+  def Install(self, apk_path):
+    """Installs apk on device.
+
+    Args:
+      apk_path: file path to apk file on host
+
+    Returns:
+      output of install command
+    """
+    return self.SendCommand("install -r %s" % apk_path)
+
   def DoesFileExist(self, src):
     """Checks if the given path exists on device target.
 
@@ -155,6 +166,7 @@ class AdbInterface:
       return True
     elif "restarting adbd as root" in output:
       # device will disappear from adb, wait for it to come back
+      time.sleep(2)
       self.SendCommand("wait-for-device")
       return True
     else:
@@ -262,8 +274,10 @@ class AdbInterface:
     inst_command_string = self._BuildInstrumentationCommand(
         package_name, runner_name, no_window_animation=no_window_animation,
         raw_mode=raw_mode, instrumentation_args=instrumentation_args)
-    command_string = "adb %s shell %s" % (self._target_arg, inst_command_string)
-    return command_string
+    return self.PreviewShellCommand(inst_command_string)
+
+  def PreviewShellCommand(self, cmd):
+    return "adb %s shell %s" % (self._target_arg, cmd)
 
   def _BuildInstrumentationCommand(
       self, package, runner_name, no_window_animation=False, profile=False,
@@ -315,57 +329,95 @@ class AdbInterface:
     self.SendCommand("wait-for-device")
     # Now the device is there, but may not be running.
     # Query the package manager with a basic command
-    pm_found = False
-    attempts = 0
-    wait_period = 5
-    while not pm_found and (attempts*wait_period) < wait_time:
-      # assume the 'adb shell pm path android' command will always
-      # return 'package: something' in the success case
-      output = self.SendShellCommand("pm path android", retry_count=1)
-      if "package:" in output:
-        pm_found = True
-      else:
-        time.sleep(wait_period)
-        attempts += 1
-    if not pm_found:
+    try:
+      self._WaitForShellCommandContents("pm path android", "package:",
+                                        wait_time)
+    except errors.WaitForResponseTimedOutError:
       raise errors.WaitForResponseTimedOutError(
           "Package manager did not respond after %s seconds" % wait_time)
 
-  def WaitForInstrumentation(self, package_name, runner_name, wait_time=120):
-    """Waits for given instrumentation to be present on device
+  def IsInstrumentationInstalled(self, package_name, runner_name):
+    """Checks if instrumentation is present on device."""
+    instrumentation_path = "%s/%s" % (package_name, runner_name)
+    command = "pm list instrumentation | grep %s" % instrumentation_path
+    try:
+      output = self.SendShellCommand(command)
+      return output.startswith("instrumentation:")
+    except errors.AbortError:
+      # command can return error code on failure
+      return False
+
+  def WaitForProcess(self, name, wait_time=120):
+    """Wait until a process is running on the device.
 
     Args:
+      name: the process name as it appears in `ps`
       wait_time: time in seconds to wait
 
     Raises:
-      WaitForResponseTimedOutError if wait_time elapses and instrumentation
-      still not present.
+      WaitForResponseTimedOutError if wait_time elapses and the process is
+          still not running
     """
-    instrumentation_path = "%s/%s" % (package_name, runner_name)
-    logger.Log("Waiting for instrumentation to be present")
-    # Query the package manager
-    inst_found = False
+    logger.Log("Waiting for process %s" % name)
+    self.SendCommand("wait-for-device")
+    self._WaitForShellCommandContents("ps", name, wait_time)
+
+  def WaitForProcessEnd(self, name, wait_time=120):
+    """Wait until a process is no longer running on the device.
+
+    Args:
+      name: the process name as it appears in `ps`
+      wait_time: time in seconds to wait
+
+    Raises:
+      WaitForResponseTimedOutError if wait_time elapses and the process is
+          still running
+    """
+    logger.Log("Waiting for process %s to end" % name)
+    self._WaitForShellCommandContents("ps", name, wait_time, invert=True)
+
+  def _WaitForShellCommandContents(self, command, expected, wait_time,
+                                   raise_abort=True, invert=False):
+    """Wait until the response to a command contains a given output.
+
+    Assumes that a only successful execution of "adb shell <command>" contains
+    the substring expected. Assumes that a device is present.
+
+    Args:
+      command: adb shell command to execute
+      expected: the string that should appear to consider the
+          command successful.
+      wait_time: time in seconds to wait
+      raise_abort: if False, retry when executing the command raises an
+          AbortError, rather than failing.
+      invert: if True, wait until the command output no longer contains the
+          expected contents.
+
+    Raises:
+      WaitForResponseTimedOutError: If wait_time elapses and the command has not
+          returned an output containing expected yet.
+    """
+    # Query the device with the command
+    success = False
     attempts = 0
     wait_period = 5
-    while not inst_found and (attempts*wait_period) < wait_time:
-      # assume the 'adb shell pm list instrumentation'
-      # return 'instrumentation: something' in the success case
+    while not success and (attempts*wait_period) < wait_time:
+      # assume the command will always contain expected in the success case
       try:
-        output = self.SendShellCommand("pm list instrumentation | grep %s"
-                                       % instrumentation_path, retry_count=1)
-        if "instrumentation:" in output:
-          inst_found = True
+        output = self.SendShellCommand(command, retry_count=1)
+        if ((not invert and expected in output)
+            or (invert and expected not in output)):
+          success = True
       except errors.AbortError, e:
-        # ignore
-        pass
-      if not inst_found:
+        if raise_abort:
+          raise
+        # ignore otherwise
+
+      if not success:
         time.sleep(wait_period)
         attempts += 1
-    if not inst_found:
-      logger.Log(
-          "Could not find instrumentation %s on device. Does the "
-          "instrumentation in test's AndroidManifest.xml match definition"
-          "in test_defs.xml?" % instrumentation_path)
+
+    if not success:
       raise errors.WaitForResponseTimedOutError()
 
   def WaitForBootComplete(self, wait_time=120):
@@ -414,7 +466,7 @@ class AdbInterface:
     output = ""
     error = None
     if runtime_restart:
-      self.SendShellCommand("setprop ro.monkey 1", retry_count=retry_count)
+      self.SendShellCommand("setprop ro.test_harness 1", retry_count=retry_count)
       # manual rest bootcomplete flag
       self.SendShellCommand("setprop dev.bootcomplete 0",
                             retry_count=retry_count)

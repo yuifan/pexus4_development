@@ -32,7 +32,9 @@ import android.os.ServiceManager;
 import android.os.StrictMode;
 import android.os.SystemClock;
 import android.os.SystemProperties;
+import android.os.UserHandle;
 import android.view.IWindowManager;
+import android.view.Surface;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -136,6 +138,17 @@ public class Monkey {
      */
     private boolean mRequestAppCrashBugreport = false;
 
+    /**Request the bugreport based on the mBugreportFrequency. */
+    private boolean mGetPeriodicBugreport = false;
+
+    /**
+     * Request the bugreport based on the mBugreportFrequency.
+     */
+    private boolean mRequestPeriodicBugreport = false;
+
+    /** Bugreport frequency. */
+    private long mBugreportFrequency = 10;
+
     /** Failure process name */
     private String mReportProcessName;
 
@@ -191,6 +204,8 @@ public class Monkey {
     long mDroppedTrackballEvents = 0;
 
     long mDroppedFlipEvents = 0;
+
+    long mDroppedRotationEvents = 0;
 
     /** The delay between user actions. This is for the scripted monkey. **/
     long mProfileWaitTime = 5000;
@@ -337,9 +352,8 @@ public class Monkey {
                 synchronized (Monkey.this) {
                     mAbort = true;
                 }
-                return (mKillProcessAfterError) ? -1 : 1;
             }
-            return 1;
+            return (mKillProcessAfterError) ? -1 : 1;
         }
     }
 
@@ -397,7 +411,7 @@ public class Monkey {
             if (mRequestBugreport) {
                 logOutput =
                         new BufferedWriter(new FileWriter(new File(Environment
-                                .getExternalStorageDirectory(), reportName), true));
+                                .getLegacyExternalStorageDirectory(), reportName), true));
             }
             // pipe everything from process stdout -> System.err
             InputStream inStream = p.getInputStream();
@@ -430,7 +444,7 @@ public class Monkey {
         // TO DO: Add the script file name to the log.
         try {
             Writer output = new BufferedWriter(new FileWriter(new File(
-                    Environment.getExternalStorageDirectory(), "scriptlog.txt"), true));
+                    Environment.getLegacyExternalStorageDirectory(), "scriptlog.txt"), true));
             output.write("iteration: " + count + " time: "
                     + MonkeyUtils.toCalendarTime(System.currentTimeMillis()) + "\n");
             output.close();
@@ -452,9 +466,6 @@ public class Monkey {
      * @param args The command-line arguments
      */
     public static void main(String[] args) {
-        // Set ro.monkey if it's not set yet.
-        SystemProperties.set("ro.monkey", "true");
-
         // Set the process name showing in "ps" or "top"
         Process.setArgV0("com.android.commands.monkey");
 
@@ -505,6 +516,10 @@ public class Monkey {
             mMainCategories.add(Intent.CATEGORY_MONKEY);
         }
 
+        if (mSeed == 0) {
+            mSeed = System.currentTimeMillis() + System.identityHashCode(this);
+        }
+
         if (mVerbose > 0) {
             System.out.println(":Monkey: seed=" + mSeed + " count=" + mCount);
             if (mValidPackages.size() > 0) {
@@ -539,8 +554,7 @@ public class Monkey {
             return -4;
         }
 
-        mRandom = new SecureRandom();
-        mRandom.setSeed((mSeed == 0) ? -1 : mSeed);
+        mRandom = new Random(mSeed);
 
         if (mScriptFileNames != null && mScriptFileNames.size() == 1) {
             // script mode, ignore other options
@@ -551,13 +565,13 @@ public class Monkey {
             mCountEvents = false;
         } else if (mScriptFileNames != null && mScriptFileNames.size() > 1) {
             if (mSetupFileName != null) {
-                mEventSource = new MonkeySourceRandomScript(mSetupFileName, 
+                mEventSource = new MonkeySourceRandomScript(mSetupFileName,
                         mScriptFileNames, mThrottle, mRandomizeThrottle, mRandom,
                         mProfileWaitTime, mDeviceSleepTime, mRandomizeScript);
                 mCount++;
             } else {
                 mEventSource = new MonkeySourceRandomScript(mScriptFileNames,
-                        mThrottle, mRandomizeThrottle, mRandom, 
+                        mThrottle, mRandomizeThrottle, mRandom,
                         mProfileWaitTime, mDeviceSleepTime, mRandomizeScript);
             }
             mEventSource.setVerbose(mVerbose);
@@ -600,7 +614,15 @@ public class Monkey {
         }
 
         mNetworkMonitor.start();
-        int crashedAtCycle = runMonkeyCycles();
+        int crashedAtCycle = 0;
+        try {
+            crashedAtCycle = runMonkeyCycles();
+        } finally {
+            // Release the rotation lock if it's still held and restore the
+            // original orientation.
+            new MonkeyRotationEvent(Surface.ROTATION_0, false).injectEvent(
+                mWm, mAm, mVerbose);
+        }
         mNetworkMonitor.stop();
 
         synchronized (this) {
@@ -615,11 +637,15 @@ public class Monkey {
             }
             if (mRequestAppCrashBugreport){
                 getBugreport("app_crash" + mReportProcessName + "_");
-                mRequestAnrBugreport = false;
+                mRequestAppCrashBugreport = false;
             }
             if (mRequestDumpsysMemInfo) {
                 reportDumpsysMemInfo();
                 mRequestDumpsysMemInfo = false;
+            }
+            if (mRequestPeriodicBugreport){
+                getBugreport("Bugreport_");
+                mRequestPeriodicBugreport = false;
             }
         }
 
@@ -650,7 +676,9 @@ public class Monkey {
             System.out.print(" trackballs=");
             System.out.print(mDroppedTrackballEvents);
             System.out.print(" flips=");
-            System.out.println(mDroppedFlipEvents);
+            System.out.print(mDroppedFlipEvents);
+            System.out.print(" rotations=");
+            System.out.println(mDroppedRotationEvents);
         }
 
         // report network stats
@@ -714,6 +742,9 @@ public class Monkey {
                 } else if (opt.equals("--pct-trackball")) {
                     int i = MonkeySourceRandom.FACTOR_TRACKBALL;
                     mFactors[i] = -nextOptionLong("trackball events percentage");
+                } else if (opt.equals("--pct-rotation")) {
+                    int i = MonkeySourceRandom.FACTOR_ROTATION;
+                    mFactors[i] = -nextOptionLong("screen rotation events percentage");
                 } else if (opt.equals("--pct-syskeys")) {
                     int i = MonkeySourceRandom.FACTOR_SYSOPS;
                     mFactors[i] = -nextOptionLong("system (key) operations percentage");
@@ -732,6 +763,9 @@ public class Monkey {
                 } else if (opt.equals("--pct-anyevent")) {
                     int i = MonkeySourceRandom.FACTOR_ANYTHING;
                     mFactors[i] = -nextOptionLong("any events percentage");
+                } else if (opt.equals("--pct-pinchzoom")) {
+                    int i = MonkeySourceRandom.FACTOR_PINCHZOOM;
+                    mFactors[i] = -nextOptionLong("pinch zoom events percentage");
                 } else if (opt.equals("--pkg-blacklist-file")) {
                     mPkgBlacklistFile = nextOptionData();
                 } else if (opt.equals("--pkg-whitelist-file")) {
@@ -762,6 +796,9 @@ public class Monkey {
                     mScriptLog = true;
                 } else if (opt.equals("--bugreport")) {
                     mRequestBugreport = true;
+                } else if (opt.equals("--periodic-bugreport")){
+                    mGetPeriodicBugreport = true;
+                    mBugreportFrequency = nextOptionLong("Number of iterations");
                 } else if (opt.equals("-h")) {
                     showUsage();
                     return false;
@@ -861,18 +898,6 @@ public class Monkey {
      * @return Returns true if ready to rock.
      */
     private boolean checkInternalConfiguration() {
-        // Check KEYCODE name array, make sure it's up to date.
-
-        String lastKeyName = null;
-        try {
-            lastKeyName = MonkeySourceRandom.getLastKeyName();
-        } catch (RuntimeException e) {
-        }
-        if (!"TAG_LAST_KEYCODE".equals(lastKeyName)) {
-            System.err.println("** Error: Key names array malformed (internal error).");
-            return false;
-        }
-
         return true;
     }
 
@@ -930,7 +955,8 @@ public class Monkey {
                 if (category.length() > 0) {
                     intent.addCategory(category);
                 }
-                List<ResolveInfo> mainApps = mPm.queryIntentActivities(intent, null, 0);
+                List<ResolveInfo> mainApps = mPm.queryIntentActivities(intent, null, 0,
+                        UserHandle.myUserId());
                 if (mainApps == null || mainApps.size() == 0) {
                     System.err.println("// Warning: no activities found for category " + category);
                     continue;
@@ -981,6 +1007,9 @@ public class Monkey {
         int eventCounter = 0;
         int cycleCounter = 0;
 
+        boolean shouldReportAnrTraces = false;
+        boolean shouldReportDumpsysMemInfo = false;
+        boolean shouldAbort = false;
         boolean systemCrashed = false;
 
         // TO DO : The count should apply to each of the script file.
@@ -991,8 +1020,8 @@ public class Monkey {
                     mRequestProcRank = false;
                 }
                 if (mRequestAnrTraces) {
-                    reportAnrTraces();
                     mRequestAnrTraces = false;
+                    shouldReportAnrTraces = true;
                 }
                 if (mRequestAnrBugreport){
                     getBugreport("anr_" + mReportProcessName + "_");
@@ -1000,11 +1029,15 @@ public class Monkey {
                 }
                 if (mRequestAppCrashBugreport){
                     getBugreport("app_crash" + mReportProcessName + "_");
-                    mRequestAnrBugreport = false;
+                    mRequestAppCrashBugreport = false;
+                }
+                if (mRequestPeriodicBugreport){
+                    getBugreport("Bugreport_");
+                    mRequestPeriodicBugreport = false;
                 }
                 if (mRequestDumpsysMemInfo) {
-                    reportDumpsysMemInfo();
                     mRequestDumpsysMemInfo = false;
+                    shouldReportDumpsysMemInfo = true;
                 }
                 if (mMonitorNativeCrashes) {
                     // first time through, when eventCounter == 0, just set up
@@ -1018,10 +1051,27 @@ public class Monkey {
                     }
                 }
                 if (mAbort) {
-                    System.out.println("** Monkey aborted due to error.");
-                    System.out.println("Events injected: " + eventCounter);
-                    return eventCounter;
+                    shouldAbort = true;
                 }
+            }
+
+            // Report ANR, dumpsys after releasing lock on this.
+            // This ensures the availability of the lock to Activity controller's appNotResponding
+            if (shouldReportAnrTraces) {
+               shouldReportAnrTraces = false;
+               reportAnrTraces();
+            }
+
+            if (shouldReportDumpsysMemInfo) {
+               shouldReportDumpsysMemInfo = false;
+               reportDumpsysMemInfo();
+            }
+
+            if (shouldAbort) {
+               shouldAbort = false;
+               System.out.println("** Monkey aborted due to error.");
+               System.out.println("Events injected: " + eventCounter);
+               return eventCounter;
             }
 
             // In this debugging mode, we never send any events. This is
@@ -1051,6 +1101,8 @@ public class Monkey {
                         mDroppedPointerEvents++;
                     } else if (ev instanceof MonkeyFlipEvent) {
                         mDroppedFlipEvents++;
+                    } else if (ev instanceof MonkeyRotationEvent) {
+                        mDroppedRotationEvents++;
                     }
                 } else if (injectCode == MonkeyEvent.INJECT_ERROR_REMOTE_EXCEPTION) {
                     systemCrashed = true;
@@ -1067,13 +1119,18 @@ public class Monkey {
                     eventCounter++;
                     if (mCountEvents) {
                         cycleCounter++;
-                        writeScriptLog(cycleCounter);
                     }
                 }
             } else {
                 if (!mCountEvents) {
                     cycleCounter++;
                     writeScriptLog(cycleCounter);
+                    //Capture the bugreport after n iteration
+                    if (mGetPeriodicBugreport) {
+                        if ((cycleCounter % mBugreportFrequency) == 0) {
+                            mRequestPeriodicBugreport = true;
+                        }
+                    }
                 } else {
                     // Event Source has signaled that we have no more events to process
                     break;
@@ -1238,7 +1295,7 @@ public class Monkey {
         usage.append("              [--pct-trackball PERCENT] [--pct-syskeys PERCENT]\n");
         usage.append("              [--pct-nav PERCENT] [--pct-majornav PERCENT]\n");
         usage.append("              [--pct-appswitch PERCENT] [--pct-flip PERCENT]\n");
-        usage.append("              [--pct-anyevent PERCENT]\n");
+        usage.append("              [--pct-anyevent PERCENT] [--pct-pinchzoom PERCENT]\n");
         usage.append("              [--pkg-blacklist-file PACKAGE_BLACKLIST_FILE]\n");
         usage.append("              [--pkg-whitelist-file PACKAGE_WHITELIST_FILE]\n");
         usage.append("              [--wait-dbg] [--dbg-no-events]\n");
@@ -1251,6 +1308,7 @@ public class Monkey {
         usage.append("              [--randomize-script]\n");
         usage.append("              [--script-log]\n");
         usage.append("              [--bugreport]\n");
+        usage.append("              [--periodic-bugreport]\n");
         usage.append("              COUNT\n");
         System.err.println(usage.toString());
     }

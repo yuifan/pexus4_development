@@ -16,7 +16,6 @@
 
 package com.example.android.apis.graphics;
 
-import javax.microedition.khronos.egl.EGL10;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
@@ -26,7 +25,7 @@ import android.opengl.GLSurfaceView;
  * Render a pair of tumbling cubes.
  */
 
-class CubeRenderer implements GLSurfaceView.Renderer {
+public class CubeRenderer implements GLSurfaceView.Renderer {
     public CubeRenderer(boolean useTranslucentBackground) {
         mTranslucentBackground = useTranslucentBackground;
         mCube = new Cube();

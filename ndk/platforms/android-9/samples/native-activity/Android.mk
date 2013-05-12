@@ -39,12 +39,11 @@ LOCAL_SRC_FILES := \
 	jni/main.c \
 	../../../../sources/android/native_app_glue/android_native_app_glue.c
 
-LOCAL_NDK_VERSION := 4
 LOCAL_SDK_VERSION := 8
 
 LOCAL_SHARED_LIBRARIES := liblog libandroid libEGL libGLESv1_CM
 
-LOCAL_PRELINK_MODULE := false
+
 
 LOCAL_MODULE := libnative-activity
 

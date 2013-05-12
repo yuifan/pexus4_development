@@ -30,7 +30,9 @@ include $(CLEAR_VARS)
 LOCAL_SRC_FILES := \
 	main.cpp \
 	PluginObject.cpp \
+	RenderingThread.cpp \
 	animation/AnimationPlugin.cpp \
+	animation/AnimationThread.cpp \
 	audio/AudioPlugin.cpp \
 	background/BackgroundPlugin.cpp \
 	form/FormPlugin.cpp \
@@ -38,6 +40,8 @@ LOCAL_SRC_FILES := \
 	paint/PaintPlugin.cpp \
 	video/VideoPlugin.cpp \
 	jni-bridge.cpp \
+
+WEBCORE_PATH := external/webkit/Source/WebCore
 
 LOCAL_C_INCLUDES += \
 	$(JNI_H_INCLUDE) \
@@ -49,16 +53,23 @@ LOCAL_C_INCLUDES += \
 	$(LOCAL_PATH)/navigation \
 	$(LOCAL_PATH)/paint \
 	$(LOCAL_PATH)/video \
-	external/webkit/WebCore/bridge \
-	external/webkit/WebCore/plugins \
-	external/webkit/WebCore/platform/android/JavaVM \
-	external/webkit/WebKit/android/plugins
+	$(WEBCORE_PATH)/bridge \
+	$(WEBCORE_PATH)/plugins \
+	$(WEBCORE_PATH)/platform/android/JavaVM \
+	external/webkit/Source/WebKit/android/plugins \
+	external/skia/include/core
 
 LOCAL_SHARED_LIBRARIES := \
-	libnativehelper
+	libnativehelper \
+	libandroid \
+	libutils \
+	libcutils \
+	libEGL \
+	libGLESv2 \
+	libskia
 
 LOCAL_CFLAGS += -fvisibility=hidden 
-LOCAL_PRELINK_MODULE:=false
+
 
 LOCAL_MODULE:= libsampleplugin
 

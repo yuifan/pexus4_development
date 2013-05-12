@@ -52,8 +52,8 @@ public class ApiDemos extends ListActivity {
         getListView().setTextFilterEnabled(true);
     }
 
-    protected List getData(String prefix) {
-        List<Map> myData = new ArrayList<Map>();
+    protected List<Map<String, Object>> getData(String prefix) {
+        List<Map<String, Object>> myData = new ArrayList<Map<String, Object>>();
 
         Intent mainIntent = new Intent(Intent.ACTION_MAIN, null);
         mainIntent.addCategory(Intent.CATEGORY_SAMPLE_CODE);
@@ -65,11 +65,13 @@ public class ApiDemos extends ListActivity {
             return myData;
 
         String[] prefixPath;
+        String prefixWithSlash = prefix;
         
         if (prefix.equals("")) {
             prefixPath = null;
         } else {
             prefixPath = prefix.split("/");
+            prefixWithSlash = prefix + "/";
         }
         
         int len = list.size();
@@ -83,7 +85,7 @@ public class ApiDemos extends ListActivity {
                     ? labelSeq.toString()
                     : info.activityInfo.name;
             
-            if (prefix.length() == 0 || label.startsWith(prefix)) {
+            if (prefixWithSlash.length() == 0 || label.startsWith(prefixWithSlash)) {
                 
                 String[] labelPath = label.split("/");
 
@@ -107,10 +109,11 @@ public class ApiDemos extends ListActivity {
         return myData;
     }
 
-    private final static Comparator<Map> sDisplayNameComparator = new Comparator<Map>() {
+    private final static Comparator<Map<String, Object>> sDisplayNameComparator =
+        new Comparator<Map<String, Object>>() {
         private final Collator   collator = Collator.getInstance();
 
-        public int compare(Map map1, Map map2) {
+        public int compare(Map<String, Object> map1, Map<String, Object> map2) {
             return collator.compare(map1.get("title"), map2.get("title"));
         }
     };
@@ -128,7 +131,7 @@ public class ApiDemos extends ListActivity {
         return result;
     }
 
-    protected void addItem(List<Map> data, String name, Intent intent) {
+    protected void addItem(List<Map<String, Object>> data, String name, Intent intent) {
         Map<String, Object> temp = new HashMap<String, Object>();
         temp.put("title", name);
         temp.put("intent", intent);
@@ -136,11 +139,11 @@ public class ApiDemos extends ListActivity {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     protected void onListItemClick(ListView l, View v, int position, long id) {
-        Map map = (Map) l.getItemAtPosition(position);
+        Map<String, Object> map = (Map<String, Object>)l.getItemAtPosition(position);
 
         Intent intent = (Intent) map.get("intent");
         startActivity(intent);
     }
-
 }

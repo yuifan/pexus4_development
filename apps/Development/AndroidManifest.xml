@@ -18,12 +18,14 @@
         package="com.android.development"
         android:versionCode="1" android:versionName="1.0">
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
     <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
     <uses-permission android:name="android.permission.DEVICE_POWER" />
     <uses-permission android:name="android.permission.DUMP" />
     <uses-permission android:name="android.permission.GET_ACCOUNTS" />
     <uses-permission android:name="android.permission.HARDWARE_TEST" />
+    <uses-permission android:name="android.permission.INTERACT_ACROSS_USERS_FULL" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.MANAGE_ACCOUNTS" />
     <uses-permission android:name="android.permission.REBOOT" />
@@ -37,18 +39,19 @@
     <uses-permission android:name="android.permission.USE_CREDENTIALS" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.WRITE_SETTINGS" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="com.google.android.googleapps.permission.ACCESS_GOOGLE_PASSWORD" />
     <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH" />
     <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.ALL_SERVICES" />
     <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.YouTubeUser" />
 
     <application android:label="Dev Tools"
-            android:icon="@drawable/ic_launcher_devtools">
+            android:icon="@mipmap/ic_launcher_devtools">
 
         <uses-library android:name="android.test.runner" />
 
         <activity android:name="Development" android:label="Dev Tools"
-            android:icon="@drawable/ic_launcher_devtools">
+            android:icon="@mipmap/ic_launcher_devtools">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -61,8 +64,6 @@
             </intent-filter>
         </activity>
         <activity android:name="PackageSummary" android:label="Package Summary">
-        </activity>
-        <activity android:name="ShowActivity" android:label="Activity">
         </activity>
         <activity android:name="AppPicker"
                 android:theme="@android:style/Theme.Dialog">
@@ -77,7 +78,6 @@
         </activity>
 
         <activity android:name="AccountsTester" android:label="AccountsTester"
-                  android:theme="@android:style/Theme.Light"
                   android:windowSoftInputMode="stateHidden">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -103,12 +103,6 @@
                 <category android:name="android.intent.category.TEST" />
             </intent-filter>
         </activity>
-        <activity android:name="DevelopmentSettings" android:label="Development Settings" >
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.TEST" />
-            </intent-filter>
-        </activity>
 
         <activity android:name="InstrumentationList" android:label="Instrumentation">
             <intent-filter>
@@ -117,19 +111,21 @@
             </intent-filter>
         </activity>
 
-        <activity android:name="MediaScannerActivity" android:label="Media Scanner">
+        <activity android:name="MediaScannerActivity" android:label="Media Provider">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.TEST" />
             </intent-filter>
         </activity>
 
+    <!--
         <activity android:name="GLSTester" android:label="Google Login Service">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.TEST" />
             </intent-filter>
         </activity>
+    -->
 
         <activity android:name="RunningProcesses" android:label="Running processes">
             <intent-filter>
@@ -176,6 +172,13 @@
             </intent-filter>
         </receiver>
         <service android:name="BadBehaviorActivity$BadService" />
+
+        <activity android:name="CacheAbuser" android:label="Cache Abuser">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.TEST" />
+            </intent-filter>
+        </activity>
 
         <activity android:name="ConfigurationViewer" android:label="Configuration">
             <intent-filter>

@@ -22,15 +22,14 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.RemoteException;
 import android.view.IWindowManager;
-import android.util.Log;
 
 /**
  * monkey activity event
  */
-public class MonkeyActivityEvent extends MonkeyEvent {    
-    private ComponentName mApp; 
+public class MonkeyActivityEvent extends MonkeyEvent {
+    private ComponentName mApp;
     long mAlarmTime = 0;
-    
+
     public MonkeyActivityEvent(ComponentName app) {
         super(EVENT_TYPE_ACTIVITY);
         mApp = app;
@@ -45,11 +44,11 @@ public class MonkeyActivityEvent extends MonkeyEvent {
     /**
      * @return Intent for the new activity
      */
-    private Intent getEvent() {        
+    private Intent getEvent() {
         Intent intent = new Intent(Intent.ACTION_MAIN);
         intent.addCategory(Intent.CATEGORY_LAUNCHER);
         intent.setComponent(mApp);
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);        
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
         return intent;
     }
 
@@ -57,7 +56,7 @@ public class MonkeyActivityEvent extends MonkeyEvent {
     public int injectEvent(IWindowManager iwm, IActivityManager iam, int verbose) {
         Intent intent = getEvent();
         if (verbose > 0) {
-            System.out.println(":Switch: " + intent.toURI());
+            System.out.println(":Switch: " + intent.toUri(0));
         }
 
         if (mAlarmTime != 0){
@@ -67,15 +66,15 @@ public class MonkeyActivityEvent extends MonkeyEvent {
         }
 
         try {
-            iam.startActivity(null, intent, null, null, 0, null, null, 0,
-                    false, false);
+            iam.startActivity(null, intent, null, null, null, 0,
+                    0, null, null, null);
         } catch (RemoteException e) {
             System.err.println("** Failed talking with activity manager!");
             return MonkeyEvent.INJECT_ERROR_REMOTE_EXCEPTION;
         } catch (SecurityException e) {
             if (verbose > 0) {
                 System.out.println("** Permissions error starting activity "
-                        + intent.toURI());
+                        + intent.toUri(0));
             }
             return MonkeyEvent.INJECT_ERROR_SECURITY_EXCEPTION;
         }

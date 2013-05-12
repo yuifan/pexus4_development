@@ -21,6 +21,9 @@
     <!--  app/activity examples strings  -->
     <!-- =============================== -->
 
+    <string name="styled_12_hour_clock">MM/<font fgcolor="#ffff0000"><b>dd</b></font>/yy h<font fgcolor="#ffff0000"><sup><small>mm</small></sup></font><b>aa</b></string>
+    <string name="styled_24_hour_clock">MM/<font fgcolor="#ffff0000"><b>dd</b></font>/yy k<font fgcolor="#ffff0000"><sup><small>mm</small></sup></font></string>
+
     <string name="tabs_1_tab_1">tab1</string>
     <string name="tabs_1_tab_2">tab2</string>
     <string name="tabs_1_tab_3">tab3</string>
@@ -31,7 +34,10 @@
     <string name="activity_dialog">App/Activity/Dialog</string>
     <string name="dialog_activity_text">Example of how you can use the
             Theme.Dialog theme to make an activity that looks like a
-            dialog.</string>
+            dialog.  It also has lots of text to show how text wrapping (and
+            corresponding window size adjustment) can happen in a dialog.</string>
+    <string name="dialog_activity_add">Add content</string>
+    <string name="dialog_activity_remove">Remove content</string>
     <string name="activity_custom_dialog">App/Activity/Custom Dialog</string>
     <string name="custom_dialog_activity_text">Example of how you can use a
             custom Theme.Dialog theme to make an activity that looks like a
@@ -49,7 +55,7 @@
         orientation modes.  Often you want to set the desired mode in your manifest
         instead of programmatically.</string>
     <string name="screen_orientation">Screen Orientation</string>
-    
+
     <string name="activity_translucent">App/Activity/Translucent</string>
     <string name="translucent_background">Example of how you can make an
             activity have a translucent background, compositing over
@@ -61,6 +67,10 @@
     <string name="activity_animation_msg">Press a button to launch an activity with a custom animation.</string>
     <string name="activity_animation_fade">Fade in</string>
     <string name="activity_animation_zoom">Zoom in</string>
+    <string name="activity_modern_animation_fade">Modern fade in</string>
+    <string name="activity_modern_animation_zoom">Modern zoom in</string>
+    <string name="activity_scale_up_animation">Scale up</string>
+    <string name="activity_zoom_thumbnail_animation">Thumbnail zoom</string>
 
     <string name="activity_save_restore">App/Activity/Save &amp; Restore State</string>
     <string name="save_restore_msg">Demonstration of saving and restoring activity state in onSaveInstanceState() and onCreate().</string>
@@ -68,8 +78,24 @@
     <string name="no_saves_state">This text field does not save its state:</string>
     <string name="initial_text">Initial text.</string>
 
+    <string name="soft_input_modes">App/Activity/Soft Input Modes</string>
+    <string name="soft_input_modes_summary">Shows how different soft input modes impact
+        application resizing due to an input method.</string>
+    <string name="soft_input_modes_label">Resize mode: </string>
+    <string name="soft_input_modes_content">This is a part of the application\'s UI that
+        can resize to adjust for the IME.</string>
+    <string name="soft_input_modes_initial_text">Text editor.\n\nTap to show the IME,
+        which will cause this window to resize as requested.</string>
+
     <string name="activity_persistent">App/Activity/Persistent State</string>
     <string name="persistent_msg">Demonstration of persistent activity state with getPreferences(0).edit() and getPreferences(0).</string>
+
+    <string name="activity_recreate">App/Activity/Recreate</string>
+    <string name="activity_recreate_msg">Demonstration recreating an activity, to have
+        it reconstructed with significant new changes.  In this case the theme is changed.</string>
+    <string name="recreate">Recreate</string>
+
+    <string name="activity_finish_affinity">App/Activity/Finish Affinity</string>
 
     <string name="activity_receive_result">App/Activity/Receive Result</string>
     <string name="pick_result">Pick a result to send, or BACK to cancel.</string>
@@ -88,6 +114,119 @@
     <string name="new_text">New Text</string>
     <string name="redirect_getter">Enter the text that will be used by the main activity.  Press back to cancel.</string>
     <string name="apply">Apply</string>
+
+    <string name="activity_presentation">App/Activity/Presentation</string>
+    <string name="presentation_activity_text">This activity demonstrates how to use a
+                  Presentation and the DisplayManager to show content on other Displays.\n
+                  Try connecting a secondary display and watch what happens.\n
+                  Selecting a Display will open a Presentation on it.</string>
+    <string name="presentation_show_all_displays">Show all displays</string>
+    <string name="presentation_photo_text">Showing photo #%1$d on display #%2$d: %3$s.</string>
+    <string name="presentation_info_text">Info</string>
+    <string name="presentation_display_id_text">Display #%1$d: %2$s</string>
+    <string name="presentation_alert_info_text">Display #%1$d Info</string>
+    <string name="presentation_alert_dismiss_text">OK</string>
+
+    <string name="activity_presentation_with_media_router">App/Activity/Presentation with Media Router</string>
+    <string name="presentation_with_media_router_activity_text">This activity demonstrates how to
+                  use a Presentation and the MediaRouter to automatically
+                  show content on a secondary display when available based on the currently
+                  selected media route.\n
+                  Try connecting a secondary display and watch what happens.</string>
+    <string name="presentation_with_media_router_play_on">Play on...</string>
+    <string name="presentation_with_media_router_now_playing_locally">Now playing on main display \'%s\'.</string>
+    <string name="presentation_with_media_router_now_playing_remotely">Now playing on secondary display \'%s\'.</string>
+
+    <string name="activity_secure_window">App/Activity/Secure Surfaces/Secure Window</string>
+    <string name="secure_window_activity_text">This activity demonstrates how to make an activity
+            use a secure surface so that its contents will only be visible on secure displays.
+            The activity\'s window has been marked with FLAG_SECURE to make it use a secure surface.
+            Consequently, the contents of the activity will not appear in screenshots and will not
+            be mirrored to non-secure displays.\n
+            \n
+            I am a secure activity!</string>
+
+    <string name="activity_secure_dialog">App/Activity/Secure Surfaces/Secure Dialog</string>
+    <string name="secure_dialog_activity_text">This activity demonstrates how to make a dialog use
+            a secure surface so that its contents will only be visible on secure displays.
+            The dialog\'s window has been marked with FLAG_SECURE to make it use a secure surface.
+            Consequently, the contents of the dialog will not appear in screenshots and will not
+            be mirrored to non-secure displays.</string>
+    <string name="secure_dialog_show_button">Show secure dialog</string>
+    <string name="secure_dialog_dialog_text">I am a secure dialog!</string>
+
+    <string name="activity_secure_surface_view">App/Activity/Secure Surfaces/Secure Surface View</string>
+    <string name="secure_surface_view_activity_text">This activity demonstrates how to make a
+            SurfaceView use a secure surface so that its contents will only be visible on
+            secure displays.
+            The surface view\'s window has been made secure using setSecure(true) to make it use
+            a secure surface.  Consequently, the contents of the surface view will not appear in
+            screenshots and will not be mirrored to non-secure displays.</string>
+
+    <string name="fragment_alert_dialog">App/Fragment/Alert Dialog</string>
+
+    <string name="fragment_arguments">App/Fragment/Arguments</string>
+    <string name="fragment_arguments_msg">Demonstrates a fragment that takes arguments
+        as a Bundle at runtime (on the right) or from attributes in a layout (on the left).</string>
+    <string name="fragment_arguments_embedded">From Attributes</string>
+    <string name="fragment_arguments_embedded_land">Landscape Only</string>
+
+    <string name="fragment_arguments_fragment_msg">Demonstrates two embedded fragments
+        that are instantiated with arguments.</string>
+
+    <string name="fragment_custom_animations">App/Fragment/Custom Animations</string>
+
+    <string name="fragment_hide_show">App/Fragment/Hide and Show</string>
+
+    <string name="fragment_context_menu">App/Fragment/Context Menu</string>
+    <string name="fragment_context_menu_msg">Fragment populating a context
+            menu; long press the button to see.</string>
+    <string name="long_press">Long press me</string>
+
+    <string name="fragment_dialog">App/Fragment/Dialog</string>
+    <string name="show">Show</string>
+
+    <string name="fragment_dialog_or_activity">App/Fragment/Dialog or Activity</string>
+    <string name="fragment_dialog_or_activity_msg">Demonstrates the same fragment
+            being shown as a dialog and embedded inside of an activity.</string>
+    <string name="fragment_dialog_or_activity_inline">Fragment embedded inside
+            of the activity:</string>
+
+    <string name="fragment_layout">App/Fragment/Layout</string>
+
+    <string name="fragment_list_array">App/Fragment/List Array</string>
+
+    <string name="fragment_menu">App/Fragment/Menu</string>
+    <string name="fragment_menu_msg">Build menus from two fragments, allowing
+        you to hide them to remove them..</string>
+    <string name="fragment1menu">Show fragment 1 menu</string>
+    <string name="fragment2menu">Show fragment 2 menu</string>
+
+    <string name="fragment_nesting_tabs">App/Fragment/Nesting Tabs</string>
+
+    <string name="fragment_retain_instance">App/Fragment/Retain Instance</string>
+    <string name="fragment_retain_instance_msg">Current progress of retained fragment;
+    restarts if fragment is re-created.</string>
+    <string name="restart">Restart</string>
+
+    <string name="fragment_receive_result">App/Fragment/Receive Result</string>
+
+    <string name="fragment_stack">App/Fragment/Stack</string>
+    <string name="new_fragment">Push</string>
+    <string name="delete_fragment">Pop</string>
+
+    <string name="first">First</string>
+    <string name="last">Last</string>
+
+    <string name="fragment_tabs">App/Fragment/Tabs</string>
+
+    <string name="loader_cursor">App/Loader/Cursor</string>
+
+    <string name="loader_retained">App/Loader/Retained</string>
+
+    <string name="loader_custom">App/Loader/Custom</string>
+
+    <string name="loader_throttle">App/Loader/Throttle</string>
 
     <string name="activity_menu">App/Activity/Menu</string>
     <string name="open_menu">Open menu</string>
@@ -134,7 +273,10 @@
     <string name="kill_process">Kill Process</string>
     <string name="remote_service_connected">Connected to remote service</string>
     <string name="remote_service_disconnected">Disconnected from remote service</string>
+    <string name="remote_service_unbind_disconn">Unbinding due to disconnect</string>
     <string name="remote_call_failed">Failure calling remote service</string>
+
+    <string name="activity_remote_service_binding_options">App/Service/Remote Service Binding Options</string>
 
     <string name="service_start_arguments_label">Sample Service Start Arguments
     </string>
@@ -161,6 +303,20 @@
             implement services that run in the foreground when needed.</string>
     <string name="start_service_foreground">Start Service Foreground</string>
     <string name="start_service_background">Start Service Background</string>
+
+    <string name="activity_isolated_service_controller">App/Service/Isolated Service Controller</string>
+    <string name="isolated_service_controller">This demonstrates the use of android:isolatedProcess
+            with services.  There are two services, which can be independently controlled; they will
+            each run in their own isolated process</string>
+    <string name="start_service_1">Start Service 1</string>
+    <string name="stop_service_1">Stop Service 1</string>
+    <string name="bind_service_1">Bind Service 1</string>
+    <string name="start_service_2">Start Service 2</string>
+    <string name="stop_service_2">Stop Service 2</string>
+    <string name="bind_service_2">Bind Service 2</string>
+    <string name="isolated_service_1_started">Isolated service 1 has started</string>
+    <string name="isolated_service_1_stopped">Isolated service 1 has stopped</string>
+    <string name="isolated_service_1_label">Sample Isolated Service 1</string>
 
     <string name="one_shot_received">The one-shot alarm has gone off</string>
     <string name="repeating_received">The repeating alarm has gone off</string>
@@ -230,13 +386,23 @@
     <string name="menu_from_xml_instructions_go_back">If you want to choose another menu resource, go back and re-run this activity.</string>
 
     <string name="voice_recognition">App/Voice Recognition</string>
+    <string name="supported_languages">Supported languages</string>
+    <string name="language_preference">Voice Search in Settings</string>
 
     <string name="text_to_speech">App/Text-To-Speech</string>
     <string name="again">Again</string>
 
+    <string name="app_update_received">ApiDemos has been updated!</string>
+
     <!-- ============================== -->
     <!--  app/content examples strings  -->
     <!-- ============================== -->
+
+    <string name="activity_clipboard">Content/Clipboard/Data Types</string>
+    <string name="copy_text">Copy Text</string>
+    <string name="copy_intent">Copy Intent</string>
+    <string name="copy_uri">Copy URI</string>
+    <string name="clip_type_prompt">Clip Type</string>
 
     <string name="activity_external_storage">Content/Storage/External Storage</string>
     <string name="create">Create</string>
@@ -247,27 +413,53 @@
     <string name="styled_text">Plain, <b>bold</b>, <i>italic</i>, <b><i>bold-italic</i></b></string>
     <string name="styled_text_prog">Assigned programmatically:</string>
 
+    <string name="activity_resources_layout_reference">Content/Resources/Layout Reference</string>
+    <string name="resources_layout_reference_description">Shows how to write layout
+        resource references, so that you can define multiple different configurations of
+        a layout resource that refer to one actual XML definition.</string>
+    <string name="resources_layout_reference_default">Default layout</string>
+    <string name="resources_layout_reference_tablet">Tablet layout</string>
+
+    <string name="activity_resources_width_and_height">Content/Resources/Width and Height</string>
+    <string name="resources_width_and_height_description">The layouts below use -wNNNdp and
+        -hNNNdp to select between different versions based on the size of the screen.</string>
+
+    <string name="activity_resources_smallest_width">Content/Resources/Smallest Width</string>
+    <string name="resources_smallest_width_description">The layouts below use -swNNNdp
+        to select between different versions based on the size of the screen.</string>
+
     <string name="activity_read_asset">Content/Assets/Read Asset</string>
 
     <string name="activity_themes">Content/Resources/Themes</string>
     <string name="activity_resources">Content/Resources/Resources</string>
 
     <string name="activity_pick_contact">Content/Provider/Pick Contact</string>
-    <string name="pick_contact_msg">Invoke Contacts to pick varius kinds of
+    <string name="pick_contact_msg">Invoke Contacts to pick various kinds of
         contact data.  None of these require that the caller hold the
         READ_CONTACTS permission.</string>
     <string name="pick_contact">Pick a Contact</string>
     <string name="pick_person">Pick a Person</string>
     <string name="pick_phone">Pick a Phone</string>
     <string name="pick_address">Pick an Address</string>
-    
+
+    <string name="activity_install_apk">Content/Packages/Install Apk</string>
+
     <!-- ============================== -->
     <!--  app/intents examples strings     -->
     <!-- ============================== -->
 
-    <string name="activity_intents">App/Intents</string>
+    <string name="activity_intents">App/Activity/Intents</string>
     <string name="intents">Example of launching various Intents.</string>
     <string name="get_music">Get Music</string>
+
+    <!-- ============================== -->
+    <!--  app/intents activity flags examples strings     -->
+    <!-- ============================== -->
+
+    <string name="activity_intent_activity_flags">App/Activity/Intent Activity Flags</string>
+    <string name="intent_activity_flags">Example of the use of various intent activity flags.</string>
+    <string name="flag_activity_clear_task">FLAG_ACTIVITY_CLEAR_TASK</string>
+    <string name="flag_activity_clear_task_pi">FLAG_ACTIVITY_CLEAR_TASK (PI)</string>
 
     <!-- =================================== -->
     <!--  app/notification examples strings  -->
@@ -303,9 +495,12 @@
     <!--  app/dialog examples strings  -->
     <!-- ============================== -->
 
-    <string name="activity_alert_dialog">App/Dialog</string>
+    <string name="activity_alert_dialog">App/Alert Dialogs</string>
     <string name="alert_dialog_two_buttons">OK Cancel dialog with a message</string>
+    <string name="alert_dialog_two_buttons_old_school">OK Cancel dialog with traditional theme</string>
+    <string name="alert_dialog_two_buttons_holo_light">OK Cancel dialog with Holo Light theme</string>
     <string name="alert_dialog_two_buttons2">OK Cancel dialog with a long message</string>
+    <string name="alert_dialog_two_buttons2ultra">OK Cancel dialog with ultra long message</string>
     <string name="alert_dialog_select_button">List dialog</string>
     <string name="alert_dialog_single_choice">Single choice list</string>
     <string name="alert_dialog_multi_choice">Repeat alarm</string>
@@ -326,6 +521,44 @@
         Plasa maku noga wipont trenzsa schengos ent kaap zux comy.\n\nWipont trenz
         kipg naar mixent phona. Cak pwico siructiun
         ruous nust apoply tyu cak Uhex sisulutiun munityuw uw dseg
+    </string>
+    <string name="alert_dialog_two_buttons2ultra_msg">
+        Plloaso mako nuto siwuf cakso dodtos anr koop a
+        cupy uf cak vux noaw yerw phuno. Whag schengos, uf efed, quiel
+        ba mada su otrenzr.\n\nSwipontgwook proudgs hus yag su ba dagarmidad.
+        Plasa maku noga wipont trenzsa schengos ent kaap zux comy.\n\nWipont trenz
+        kipg naar mixent phona. Cak pwico siructiun
+        ruous nust apoply tyu cak Uhex sisulutiun munityuw uw dseg\n\n
+        Plloaso mako nuto siwuf cakso dodtos anr koop a
+        cupy uf cak vux noaw yerw phuno. Whag schengos, uf efed, quiel
+        ba mada su otrenzr.\n\nSwipontgwook proudgs hus yag su ba dagarmidad.
+        Plasa maku noga wipont trenzsa schengos ent kaap zux comy.\n\nWipont trenz
+        kipg naar mixent phona. Cak pwico siructiun
+        ruous nust apoply tyu cak Uhex sisulutiun munityuw uw dseg\n\n
+        Plloaso mako nuto siwuf cakso dodtos anr koop a
+        cupy uf cak vux noaw yerw phuno. Whag schengos, uf efed, quiel
+        ba mada su otrenzr.\n\nSwipontgwook proudgs hus yag su ba dagarmidad.
+        Plasa maku noga wipont trenzsa schengos ent kaap zux comy.\n\nWipont trenz
+        kipg naar mixent phona. Cak pwico siructiun
+        ruous nust apoply tyu cak Uhex sisulutiun munityuw uw dseg\n\n
+        Plloaso mako nuto siwuf cakso dodtos anr koop a
+        cupy uf cak vux noaw yerw phuno. Whag schengos, uf efed, quiel
+        ba mada su otrenzr.\n\nSwipontgwook proudgs hus yag su ba dagarmidad.
+        Plasa maku noga wipont trenzsa schengos ent kaap zux comy.\n\nWipont trenz
+        kipg naar mixent phona. Cak pwico siructiun
+        ruous nust apoply tyu cak Uhex sisulutiun munityuw uw dseg\n\n
+        Plloaso mako nuto siwuf cakso dodtos anr koop a
+        cupy uf cak vux noaw yerw phuno. Whag schengos, uf efed, quiel
+        ba mada su otrenzr.\n\nSwipontgwook proudgs hus yag su ba dagarmidad.
+        Plasa maku noga wipont trenzsa schengos ent kaap zux comy.\n\nWipont trenz
+        kipg naar mixent phona. Cak pwico siructiun
+        ruous nust apoply tyu cak Uhex sisulutiun munityuw uw dseg\n\n
+        Plloaso mako nuto siwuf cakso dodtos anr koop a
+        cupy uf cak vux noaw yerw phuno. Whag schengos, uf efed, quiel
+        ba mada su otrenzr.\n\nSwipontgwook proudgs hus yag su ba dagarmidad.
+        Plasa maku noga wipont trenzsa schengos ent kaap zux comy.\n\nWipont trenz
+        kipg naar mixent phona. Cak pwico siructiun
+        ruous nust apoply tyu cak Uhex sisulutiun munityuw uw dseg\n\n
     </string>
     <string name="alert_dialog_ok">OK</string>
     <string name="alert_dialog_hide">Hide</string>
@@ -363,12 +596,15 @@
     <!--  app/menu examples strings     -->
     <!-- ============================== -->
 
-    <string name="preferences_from_xml">App/Preferences/1. Preferences from XML</string>
-    <string name="launching_preferences">App/Preferences/2. Launching preferences</string>
-    <string name="preference_dependencies">App/Preferences/3. Preference dependencies</string>
-    <string name="default_values">App/Preferences/4. Default values</string>
-    <string name="preferences_from_code">App/Preferences/5. Preferences from code</string>
-    <string name="advanced_preferences">App/Preferences/6. Advanced preferences</string>
+    <string name="preferences_from_xml">Preference/1. Preferences from XML</string>
+    <string name="launching_preferences">Preference/2. Launching preferences</string>
+    <string name="preference_dependencies">Preference/3. Preference dependencies</string>
+    <string name="default_values">Preference/4. Default values</string>
+    <string name="preferences_from_code">Preference/5. Preferences from code</string>
+    <string name="advanced_preferences">Preference/6. Advanced preferences</string>
+    <string name="fragment_preferences">Preference/7. Fragment</string>
+    <string name="preference_with_headers">Preference/8. Headers</string>
+    <string name="switch_preference">Preference/9. Switch</string>
 
     <string name="launch_preference_activity">Launch PreferenceActivity</string>
     <string name="counter_value_is">The counter value is</string>
@@ -378,11 +614,12 @@
     <string name="launch_preferences">Launch preferences</string>
     <string name="preference_attributes">Preference attributes</string>
 
-    <string name="title_toggle_preference">Toggle preference</string>
-    <string name="summary_toggle_preference">This is a toggle button</string>
-
     <string name="title_checkbox_preference">Checkbox preference</string>
     <string name="summary_checkbox_preference">This is a checkbox</string>
+
+    <string name="title_switch_preference">Switch preference</string>
+    <string name="summary_switch_preference">This is a switch</string>
+    <string name="summary_switch_preference_yes_no">This is a switch with custom text</string>
 
     <string name="title_yesno_preference">Yes or no preference</string>
     <string name="summary_yesno_preference">An example that uses a yes/no dialog</string>
@@ -399,6 +636,9 @@
     <string name="title_screen_preference">Screen preference</string>
     <string name="summary_screen_preference">Shows another screen of preferences</string>
 
+    <string name="title_fragment_preference">Fragment preference</string>
+    <string name="summary_fragment_preference">Shows another fragment of preferences</string>
+
     <string name="title_next_screen_toggle_preference">Toggle preference</string>
     <string name="summary_next_screen_toggle_preference">Preference that is on the next screen but same hierarchy</string>
 
@@ -412,9 +652,9 @@
     <string name="summary_on_advanced_toggle_preference">I\'m on! :)</string>
     <string name="summary_off_advanced_toggle_preference">I\'m off! :(</string>
 
-    <string name="title_parent_preference">Parent toggle</string>
+    <string name="title_parent_preference">Parent checkbox preference</string>
     <string name="summary_parent_preference">This is visually a parent</string>
-    <string name="title_child_preference">Child toggle</string>
+    <string name="title_child_preference">Child checkbox preference</string>
     <string name="summary_child_preference">This is visually a child</string>
 
     <string name="example_preference_dependency">Example preference dependency</string>
@@ -460,6 +700,7 @@
     <!--  app/device policies examples strings     -->
     <!-- ============================== -->
 
+    <!-- Manifest strings -->
     <string name="activity_sample_device_admin">App/Device Admin</string>
     <string name="sample_device_admin">Sample Device Admin</string>
     <string name="sample_device_admin_description">Sample code for writing
@@ -467,21 +708,99 @@
         for you to directly control what the DeviceAdmin does with the
         system.</string>
 
-    <string name="sample_device_admin_summary">Demonstration of a DeviceAdmin
-        class for administering the user\'s device.</string>
-    <string name="enable_admin">Enable Admin</string>
-    <string name="disable_admin">Disable Admin</string>
-    <string name="password_quality">Password Quality</string>
-    <string name="password_length_hint">Minimum Length</string>
-    <string name="set_password">Set Password</string>
-    <string name="password_hint">Password</string>
-    <string name="reset_password">Reset Password</string>
-    <string name="max_failed_pw_hint">Password Attempts Wipe Data</string>
-    <string name="force_lock">Force Lock</string>
-    <string name="wipe_data">Wipe Data</string>
-    <string name="wipe_all_data">Wipe All Data</string>
-    <string name="timeout_hint">Max screen timeout</string>
-    <string name="set_timeout_label">Set Timeout</string>
+    <!-- Strings used in preference headers and preference definitions -->
+    <string name="header_general">General</string>
+    <string name="header_quality">Password quality</string>
+    <string name="header_expiration">Password expiration</string>
+    <string name="header_lock_wipe">Lock screen / Wipe</string>
+    <string name="header_encryption">Encryption</string>
+
+    <string name="enable_admin">Enable admin</string>
+    <string name="device_capabilities_category">Device capabilities</string>
+    <string name="disable_camera">Disable all device cameras</string>
+    <string name="disable_keyguard_widgets">Disable keyguard widgets</string>
+    <string name="disable_keyguard_secure_camera">Disable keyguard secure camera</string>
+    <string name="keyguard_widgets_disabled">Keyguard widgets disabled</string>
+    <string name="keyguard_widgets_enabled">Keyguard widgets enabled</string>
+    <string name="keyguard_secure_camera_disabled">Keyguard secure camera disabled</string>
+    <string name="keyguard_secure_camera_enabled">Keyguard secure camera enabled</string>
+    <string name="camera_disabled">Device cameras disabled</string>
+    <string name="camera_enabled">Device cameras enabled</string>
+    <string name="password_controls_category">Password controls</string>
+    <string name="set_password_user">Set password (user)</string>
+    <string name="set_password_api">Set password (via API)</string>
+    <string name="set_password_api_dialog">Set screen lock password to</string>
+    <string name="password_quality_category">Password quality</string>
+    <string name="password_quality">Password quality</string>
+    <string name="password_minimum_length">Minimum length </string>
+    <string name="password_minimum_letters">Minimum letters</string>
+    <string name="password_minimum_numeric">Minimum numeric</string>
+    <string name="password_minimum_lower_case">Minimum lower case</string>
+    <string name="password_minimum_upper_case">Minimum upper case</string>
+    <string name="password_minimum_symbols">Minimum symbols</string>
+    <string name="password_minimum_non_letter">Minimum non-letter</string>
+    <string name="password_expiration_category">Password history / Expiration</string>
+    <string name="password_history_depth">Password history depth</string>
+    <string name="password_expiration_timeout">Password expiration timeout (minutes)</string>
+    <string name="password_expiration_status">Password expiration status</string>
+    <string name="lock_wipe_category">Lock screen / Wipe</string>
+    <string name="maximum_lock_time">Max time to screen lock (minutes)</string>
+    <string name="maximum_password_fails">Max password failures for local wipe</string>
+    <string name="lock_screen">Lock screen now</string>
+    <string name="wipe_data">Wipe data</string>
+    <string name="wipe_data_summary">Wipe internal data, like a factory reset</string>
+    <string name="wipe_all_data">Wipe all data</string>
+    <string name="wipe_all_data_summary">Wipe internal data and external storage</string>
+    <string name="encryption_category">Encryption</string>
+    <string name="require_encryption">Require encryption</string>
+    <string name="activate_encryption">Activate encryption</string>
+
+    <!-- Strings used by DeviceAdminSample controller code -->
+    <string name="password_sufficient">Current password meets policy requirements</string>
+    <string name="password_insufficient">Current password does not meet policy requirements</string>
+    <string name="monkey_reset_password">You can\'t reset my password, you are a monkey!</string>
+    <string name="monkey_lock_screen">You can\'t lock my screen, you are a monkey!</string>
+    <string name="monkey_encryption">You can\'t start encryption, you are a monkey!</string>
+    <string name="monkey_wipe_data">You can\'t wipe my data, you are a monkey!</string>
+    <string name="monkey_ok">I admit defeat</string>
+    <string name="reset_password_warning">
+        You have just reset your screen lock password to \"%1$s\""</string>
+    <string name="reset_password_ok">Don\'t forget it</string>
+    <string name="add_admin_extra_app_text">
+        Additional text explaining why this needs to be added.</string>
+    <string name="status_local_global">Local=%1$s / Global=%2$s</string>
+    <string name="status_device_encryption">Device encryption status=%1$s</string>
+    <string name="status_days_hours_minutes">%1$sd %2$sh %3$sm</string>
+    <string name="number_format_warning">Bad value \"%1$s\""</string>
+    <string name="wipe_warning_first">This will erase all of your data.  Are you sure?</string>
+    <string name="wipe_warning_first_ok">Yes</string>
+    <string name="wipe_warning_first_no">No</string>
+    <string name="wipe_warning_second">This is not a test. This WILL erase all of your data!
+        Are you really absolutely sure?</string>
+    <string name="wipe_warning_second_full">This is not a test. This WILL erase all of your data,
+        including external storage! Are you really absolutely sure?</string>
+    <string name="wipe_warning_second_ok">BOOM!</string>
+    <string name="wipe_warning_second_no">Oops, run away!</string>
+    <string name="encryption_not_supported">Encryption is not supported on this device.</string>
+    <string name="encryption_not_supported_ok">OK</string>
+    <string name="encryption_status_unknown">unknown</string>
+    <string name="encryption_status_unsupported">unsupported</string>
+    <string name="encryption_status_inactive">inactive</string>
+    <string name="encryption_status_activating">activating</string>
+    <string name="encryption_status_active">active</string>
+    <string name="expiration_status_none">None</string>
+    <string name="expiration_status_past">Password expired %1$s ago</string>
+    <string name="expiration_status_future">Password will expire %1$s from now</string>
+
+    <!-- Strings used by the sample DeviceAdminReceiver -->
+    <string name="admin_receiver_status">Sample Device Admin: %1$s</string>
+    <string name="admin_receiver_status_enabled">enabled</string>
+    <string name="admin_receiver_status_disabled">disabled</string>
+    <string name="admin_receiver_status_pw_changed">pw changed</string>
+    <string name="admin_receiver_status_pw_failed">pw failed</string>
+    <string name="admin_receiver_status_pw_succeeded">pw succeeded</string>
+    <string name="admin_receiver_status_disable_warning">
+        This is an optional message to warn the user about disabling.</string>
 
     <!-- ============================== -->
     <!--  app/voice recognition examples strings  -->
@@ -490,6 +809,44 @@
     <string name="voice_recognition_prompt">This activity demonstrates the voice recognition APIs.</string>
     <string name="speak_button">Speak!</string>
     <string name="voice_recognition_results">Results:</string>
+
+    <!-- ================================= -->
+    <!--  app/action bar examples strings  -->
+    <!-- ================================= -->
+
+    <string name="action_bar_mechanics">App/Action Bar/Action Bar Mechanics</string>
+    <string name="action_bar_usage">App/Action Bar/Action Bar Usage</string>
+    <string name="action_bar_tabs">App/Action Bar/Action Bar Tabs</string>
+    <string name="action_bar_settings_action_provider">App/Action Bar/Action Provider/Settings Action Provider</string>
+    <string name="action_bar_share_action_provider">App/Action Bar/Action Provider/Share Action Provider</string>
+    <string name="action_bar_settings_action_provider_no_handling">Handling in onOptionsItemSelected avoided</string>
+
+    <string name="action_bar_search">Search</string>
+    <string name="action_bar_add">Add</string>
+    <string name="action_bar_edit">Edit</string>
+    <string name="action_bar_share">Share</string>
+    <string name="action_bar_sort">Sort</string>
+    <string name="action_bar_sort_alpha">Alphabetically</string>
+    <string name="action_bar_sort_size">By size</string>
+    <string name="action_bar_share_with">Share with...</string>
+    <string name="action_bar_settings">Settings</string>
+
+    <string name="action_bar_display_options">App/Action Bar/Display Options</string>
+    <string name="toggle_home_as_up">DISPLAY_HOME_AS_UP</string>
+    <string name="toggle_show_home">DISPLAY_SHOW_HOME</string>
+    <string name="toggle_use_logo">DISPLAY_USE_LOGO</string>
+    <string name="toggle_show_title">DISPLAY_SHOW_TITLE</string>
+    <string name="toggle_show_custom">DISPLAY_SHOW_CUSTOM</string>
+    <string name="toggle_navigation">Navigation</string>
+    <string name="cycle_custom_gravity">Cycle Custom View Gravity</string>
+
+    <string name="display_options_custom_button">Custom View!</string>
+    <string name="display_options_menu_item">Menu Item</string>
+
+    <string name="btn_add_tab">Add new tab</string>
+    <string name="btn_remove_tab">Remove last tab</string>
+    <string name="btn_toggle_tabs">Toggle tab mode</string>
+    <string name="btn_remove_all_tabs">Remove all tabs</string>
 
     <!-- ============================ -->
     <!--  graphics examples strings  -->
@@ -524,7 +881,6 @@
     <string name="linear_layout_8_right">Right</string>
     <string name="linear_layout_10_from">From:</string>
     <string name="linear_layout_10_to">To:</string>
-    <string name="list_7_nothing">Nothing\u2026</string>
     <string name="radio_group_snack">Snack</string>
     <string name="radio_group_selection">"You have selected: "</string>
     <string name="radio_group_none">(none)</string>
@@ -538,6 +894,12 @@
     <string name="seekbar_from_touch">from touch</string>
 
     <string name="ratingbar_rating">Rating:</string>
+
+    <string name="popup_menu_search">Search</string>
+    <string name="popup_menu_add">Add</string>
+    <string name="popup_menu_edit">Edit</string>
+    <string name="popup_menu_share">Share</string>
+    <string name="popup_menu_button">Make a Popup!</string>
 
     <string name="secure_view_description">
         This activity demonstrates a view that detects when it is potentially obscured
@@ -581,6 +943,51 @@
     <string name="secure_view_overlay_button1">Totally safe, trust me...</string>
     <string name="secure_view_overlay_button2">Clicky?</string>
     <string name="secure_view_overlay_button3">Think of the penguins!</string>
+
+    <string name="split_touch_view_description">
+        This activity demonstrates splitting touch events across multiple views
+        within a view group.  Here we have two ListViews within a LinearLayout
+        that has the attribute android:splitMotionEvents set to "true".
+        Try scrolling both lists simultaneously using multiple fingers.
+    </string>
+    <string name="split_touch_view_cheese_toast">Do you have any %1$s?\n%2$s</string>
+
+    <string name="searchview_hint">Find something</string>
+    <string name="cheese_hunt_hint">Cheese hunt</string>
+    <string name="open_search">Expand</string>
+    <string name="close_search">Iconify</string>
+
+    <string name="drag_explanation">
+        Longpress on a dot to start a drag, then drop over another dot. The destination
+        dot will append the drag\'s textual conversion to the EditText.
+    </string>
+
+    <string name="game_controller_input_description">
+        This activity demonstrates how to process input events received from
+        game controllers.  Please connect your game controller now and try
+        moving the joysticks or pressing buttons.  If it helps, try to imagine
+        that you are a lone space cowboy in hot pursuit of the aliens who kidnapped
+        your favorite llama on their way back to Andromeda...
+    </string>
+    <string name="game_controller_input_heading_device">Input Device</string>
+    <string name="game_controller_input_heading_axes">Axes</string>
+    <string name="game_controller_input_heading_keys">Keys and Buttons</string>
+    <string name="game_controller_input_label_device_name">Name</string>
+    <string name="game_controller_input_key_pressed">Pressed</string>
+    <string name="game_controller_input_key_released">Released</string>
+
+    <string name="hover_description">
+        This activity demonstrates how to handle hover events with View.onHoverEvent,
+        ViewGroup.onInterceptHoverEvent, and View.setOnHoverListener.
+    </string>
+    <string name="hover_intercept_checkbox">Make container intercept hover events</string>
+    <string name="hover_message_initial">Try using a mouse or touch pad to hover over views within this activity.</string>
+    <string name="hover_message_entered_at">Entered the container at (%1$f,%2$f).</string>
+    <string name="hover_message_moved_at">Moved within the container at (%1$f,%2$f).</string>
+    <string name="hover_message_exited_at">Exited the container at (%1$f,%2$f).  The pointer may be inside the bounds of a child instead.</string>
+    <string name="hover_intercept_message_initial">Try hovering over the button.</string>
+    <string name="hover_intercept_message_intercepted">Intercepted hover event instead of sending it to the button.  Om nom nom!</string>
+    <string name="hover_button">Hover Here</string>
 
     <!-- ============================== -->
     <!--  GoogleLogin examples strings  -->
@@ -660,7 +1067,15 @@
     <string name="focus_3_right">right</string>
     <string name="focus_3_top">top</string>
     <string name="focus_3_bottom">bottom</string>
+    <string name="focus_5_button1">1</string>
+    <string name="focus_5_button2">2</string>
+    <string name="focus_5_button3">3</string>
+    <string name="focus_5_button4">4</string>
+    <string name="focus_5_button5">5</string>
     <string name="gallery_2_text">Testing</string>
+    <string name="grid_layout_1_instructions">Type here:</string>
+    <string name="grid_layout_1_ok">Ok</string>
+    <string name="grid_layout_1_cancel">Cancel</string>
     <string name="googlelogin_login">Login</string>
     <string name="googlelogin_bad_login">Bad Login</string>
     <string name="googlelogin_clear">Clear Credentials</string>
@@ -692,14 +1107,21 @@
     <string name="linear_layout_8_b">B</string>
     <string name="linear_layout_8_c">C</string>
     <string name="linear_layout_9_button">Button</string>
-    <string name="link_text_auto"><b>text1:</b> This is some text.  In
+    <string name="link_text_auto"><b>text1: Various kinds
+      of data that will be auto-linked.</b>  In
       this text are some things that are actionable.  For instance,
       you can click on http://www.google.com and it will launch the
-      web browser.  You can click on google.com too.  And, if you
-      click on (415) 555-1212 it should dial the phone.
+      web browser.  You can click on google.com too.  If you
+      click on (415) 555-1212 it should dial the phone.  Or just write
+      foobar@example.com for an e-mail link.  If you have a URI like
+      http://www.example.com/lala/foobar@example.com you should get the
+      full link not the e-mail address.  Or you can put a location
+      like 1600 Amphitheatre Parkway, Mountain View, CA 94043.  To summarize:
+      https://www.google.com, or 650-253-0000, somebody@example.com,
+      or 9606 North MoPac Expressway, Suite 400, Austin, TX 78759.
     </string>
-    <string name="link_text_manual"><b>text2:</b> This is some other
-      text, with a <a href="http://www.google.com">link</a> specified
+    <string name="link_text_manual"><b>text2: Explicit links using &lt;a&gt; markup.</b>
+      This has markup for a <a href="http://www.google.com">link</a> specified
       via an &lt;a&gt; tag.  Use a \"tel:\" URL
       to <a href="tel:4155551212">dial a phone number</a>.
     </string>
@@ -868,11 +1290,9 @@
 
     <string name="google_login_username_text"></string>
 
-    <string name="incoming_message_notify_text">Show Notification</string>
-
     <string name="incoming_message_info_message_text">this is the text of a previous message.\nkthx. meet u for dinner. cul8r</string>
 
-    <string name="incoming_message_view_message_text">this is the text of a previous message.\nkthx. meet u for dinner. cul8r</string>
+    <string name="incoming_message_view_message_text">This is the text of the posted notification.</string>
     <string name="imcoming_message_view_message2_text">Did you notice that the status bar icon disappeared?</string>
     <string name="imcoming_message_ticker_text">New text message: <xliff:g id="text">%0$s</xliff:g></string>
 
@@ -913,6 +1333,9 @@
     <string name="chronometer_clear_format">Clear format string</string>
     <string name="chronometer_initial_format">Initial format: <xliff:g id="initial-format">%s</xliff:g></string>
 
+    <string name="play">Play</string>
+    <string name="pause">Pause</string>
+
     <!-- ============================ -->
     <!--  vibrator examples strings  -->
     <!-- ============================ -->
@@ -948,8 +1371,8 @@
     <!-- ============================ -->
 
     <string name="sms_warning">
-      WARNING: this demo can send actual text messages (one at a time), so be sure to
-      test with the Android emulator or have a text messaging plan with your carrier.
+        WARNING: this demo can send actual text messages (one at a time), so be sure to
+        test with the Android emulator or have a text messaging plan with your carrier.
     </string>
     <string name="sms_enable_receiver">Enable SMS broadcast receiver</string>
     <string name="sms_recipient_label">Recipient #</string>
@@ -958,5 +1381,57 @@
     <string name="sms_speak_string_format">Message from "%1$s": %2$s</string>
     <string name="reply">Reply</string>
     <string name="dismiss">Dismiss</string>
-</resources>
 
+    <string name="share">Share</string>
+
+    <!-- ============================ -->
+    <!--  Accessibility examples strings  -->
+    <!-- ============================ -->
+
+    <string name="accessibility_node_provider">Accessibility/Accessibility Node Provider</string>
+    <string name="accessibility_node_provider_instructions">Enable TalkBack and Explore-by-touch from accessibility
+        settings. Then touch the colored squares.</string>
+
+    <string name="accessibility_service">Accessibility/Accessibility Service</string>
+    <string name="accessibility_service_label">ClockBack</string>
+    <string name="accessibility_service_instructions">
+        1. Enable TalkBack (Settings -> Accessibility -> TalkBack).
+        \n\n2. Enable Explore-by-Touch (Settings -> Accessibility -> Explore by Touch).
+        \n\n3. Touch explore the Clock application and the home screen.
+        \n\n4. Go to the Clock application and change the time of an alarm.
+        \n\n5. Enable ClockBack (Settings -> Accessibility -> ClockBack).
+        \n\n6. Go to the Clock application and change an alarm.
+        \n\n7. Set the ringer to vibration mode and change an alarm.
+        \n\n8. Set the ringer to muted mode and change an alarm.
+    </string>
+
+    <string name="value_ringer_audible">Ringer audible</string>
+    <string name="value_ringer_vibrate">Ringer vibrate</string>
+    <string name="value_ringer_silent">Ringer silent</string>
+    <string name="template_screen_on">Screen on. Volume %1$s percent.</string>
+    <string name="template_screen_off">Screen off. Volume %1$s percent.</string>
+
+    <string name="accessibility_query_window">Accessibility/Accessibility Node Querying</string>
+    <string name="accessibility_query_window_label">QueryBack</string>
+    <string name="accessibility_query_window_description">Task App Accessibility Service</string>
+    <string name="accessibility_query_window_instructions">
+        1. Enable QueryBack (Settings -> Accessibility -> QueryBack).
+        \n\n2. Enable Explore-by-Touch (Settings -> Accessibility -> Explore by Touch).
+        \n\n3. Touch explore the list.
+    </string>
+
+    <string name="accessibility_custom_view">Accessibility/Custom View</string>
+    <string name="accessibility_custom_view_instructions">
+        1. Enable TalkBack (Settings -> Accessibility -> TalkBack).
+        \n\n2. Enable Explore-by-Touch (Settings -> Accessibility -> Explore by Touch).
+        \n\n3. Touch explore/poke the buttons.
+    </string>
+    <string name="accessibility_custom_on">On</string>
+    <string name="accessibility_custom_off">Off</string>
+
+    <string name="task_name">Task</string>
+    <string name="task_complete_template">Task %1$s %2$s</string>
+    <string name="task_complete">is complete</string>
+    <string name="task_not_complete">is not complete</string>
+
+  </resources>

@@ -41,19 +41,19 @@ JavaVM* gVM;
 
 #define EXPORT __attribute__((visibility("default")))
 
-NPError NPP_New(NPMIMEType pluginType, NPP instance, uint16 mode, int16 argc,
+NPError NPP_New(NPMIMEType pluginType, NPP instance, uint16_t mode, int16_t argc,
         char* argn[], char* argv[], NPSavedData* saved);
 NPError NPP_Destroy(NPP instance, NPSavedData** save);
 NPError NPP_SetWindow(NPP instance, NPWindow* window);
 NPError NPP_NewStream(NPP instance, NPMIMEType type, NPStream* stream,
-        NPBool seekable, uint16* stype);
+        NPBool seekable, uint16_t* stype);
 NPError NPP_DestroyStream(NPP instance, NPStream* stream, NPReason reason);
-int32   NPP_WriteReady(NPP instance, NPStream* stream);
-int32   NPP_Write(NPP instance, NPStream* stream, int32 offset, int32 len,
+int32_t   NPP_WriteReady(NPP instance, NPStream* stream);
+int32_t   NPP_Write(NPP instance, NPStream* stream, int32_t offset, int32_t len,
         void* buffer);
 void    NPP_StreamAsFile(NPP instance, NPStream* stream, const char* fname);
 void    NPP_Print(NPP instance, NPPrint* platformPrint);
-int16   NPP_HandleEvent(NPP instance, void* event);
+int16_t   NPP_HandleEvent(NPP instance, void* event);
 void    NPP_URLNotify(NPP instance, const char* URL, NPReason reason,
         void* notifyData);
 NPError NPP_GetValue(NPP instance, NPPVariable variable, void *value);
@@ -76,7 +76,8 @@ ANPPathInterfaceV0          gPathI;
 ANPSurfaceInterfaceV0       gSurfaceI;
 ANPSystemInterfaceV0        gSystemI;
 ANPTypefaceInterfaceV0      gTypefaceI;
-ANPWindowInterfaceV0        gWindowI;
+ANPWindowInterfaceV1        gWindowI;
+ANPNativeWindowInterfaceV0  gNativeWindowI;
 
 #define ARRAY_COUNT(array)      (sizeof(array) / sizeof(array[0]))
 #define DEBUG_PLUGIN_EVENTS     0
@@ -114,17 +115,18 @@ NPError NP_Initialize(NPNetscapeFuncs* browserFuncs, NPPluginFuncs* pluginFuncs,
         uint32_t        size;
         ANPInterface*   i;
     } gPairs[] = {
-        { kAudioTrackInterfaceV0_ANPGetValue,   sizeof(gSoundI),    &gSoundI },
-        { kBitmapInterfaceV0_ANPGetValue,       sizeof(gBitmapI),   &gBitmapI },
-        { kCanvasInterfaceV0_ANPGetValue,       sizeof(gCanvasI),   &gCanvasI },
-        { kEventInterfaceV0_ANPGetValue,        sizeof(gEventI),    &gEventI },
-        { kLogInterfaceV0_ANPGetValue,          sizeof(gLogI),      &gLogI },
-        { kPaintInterfaceV0_ANPGetValue,        sizeof(gPaintI),    &gPaintI },
-        { kPathInterfaceV0_ANPGetValue,         sizeof(gPathI),     &gPathI },
-        { kSurfaceInterfaceV0_ANPGetValue,      sizeof(gSurfaceI),  &gSurfaceI },
-        { kSystemInterfaceV0_ANPGetValue,       sizeof(gSystemI),   &gSystemI },
-        { kTypefaceInterfaceV0_ANPGetValue,     sizeof(gTypefaceI), &gTypefaceI },
-        { kWindowInterfaceV0_ANPGetValue,       sizeof(gWindowI),   &gWindowI },
+        { kAudioTrackInterfaceV0_ANPGetValue,   sizeof(gSoundI),        &gSoundI },
+        { kBitmapInterfaceV0_ANPGetValue,       sizeof(gBitmapI),       &gBitmapI },
+        { kCanvasInterfaceV0_ANPGetValue,       sizeof(gCanvasI),       &gCanvasI },
+        { kEventInterfaceV0_ANPGetValue,        sizeof(gEventI),        &gEventI },
+        { kLogInterfaceV0_ANPGetValue,          sizeof(gLogI),          &gLogI },
+        { kPaintInterfaceV0_ANPGetValue,        sizeof(gPaintI),        &gPaintI },
+        { kPathInterfaceV0_ANPGetValue,         sizeof(gPathI),         &gPathI },
+        { kSurfaceInterfaceV0_ANPGetValue,      sizeof(gSurfaceI),      &gSurfaceI },
+        { kSystemInterfaceV0_ANPGetValue,       sizeof(gSystemI),       &gSystemI },
+        { kTypefaceInterfaceV0_ANPGetValue,     sizeof(gTypefaceI),     &gTypefaceI },
+        { kWindowInterfaceV1_ANPGetValue,       sizeof(gWindowI),       &gWindowI },
+        { kNativeWindowInterfaceV0_ANPGetValue, sizeof(gNativeWindowI), &gNativeWindowI },
     };
     for (size_t i = 0; i < ARRAY_COUNT(gPairs); i++) {
         gPairs[i].i->inSize = gPairs[i].size;
@@ -151,7 +153,7 @@ const char *NP_GetMIMEDescription(void)
     return "application/x-testbrowserplugin:tst:Test plugin mimetype is application/x-testbrowserplugin";
 }
 
-NPError NPP_New(NPMIMEType pluginType, NPP instance, uint16 mode, int16 argc,
+NPError NPP_New(NPMIMEType pluginType, NPP instance, uint16_t mode, int16_t argc,
                 char* argn[], char* argv[], NPSavedData* saved)
 {
 
@@ -162,6 +164,7 @@ NPError NPP_New(NPMIMEType pluginType, NPP instance, uint16 mode, int16 argc,
     if (browser->version >= 14) {
         instance->pdata = browser->createobject (instance, getPluginClass());
         obj = static_cast<PluginObject*>(instance->pdata);
+        obj->pluginType = 0;
     }
     /* END: STANDARD PLUGIN FRAMEWORK */
 
@@ -175,6 +178,9 @@ NPError NPP_New(NPMIMEType pluginType, NPP instance, uint16 mode, int16 argc,
             }
             else if (!strcmp(argv[i], "Surface")) {
                model = kSurface_ANPDrawingModel;
+            }
+            else if (!strcmp(argv[i], "OpenGL")) {
+               model = kOpenGL_ANPDrawingModel;
             }
             gLogI.log(kDebug_ANPLogType, "------ %p DrawingModel is %d", instance, model);
             break;
@@ -228,7 +234,9 @@ NPError NPP_New(NPMIMEType pluginType, NPP instance, uint16 mode, int16 argc,
                 obj->pluginType = kVideo_PluginType;
                 obj->activePlugin = new VideoPlugin(instance);
             }
-            gLogI.log(kDebug_ANPLogType, "------ %p PluginType is %d", instance, obj->pluginType);
+            else {
+                gLogI.log(kError_ANPLogType, "PluginType %s unknown!", argv[i]);
+            }
             break;
         }
     }
@@ -240,6 +248,8 @@ NPError NPP_New(NPMIMEType pluginType, NPP instance, uint16 mode, int16 argc,
         obj->activePlugin = new BallAnimation(instance);
     }
 
+    gLogI.log(kDebug_ANPLogType, "------ %p PluginType is %d", instance, obj->pluginType);
+
     // check to ensure the pluginType supports the model
     if (!obj->activePlugin->supportsDrawingModel(model)) {
         gLogI.log(kError_ANPLogType, "------ %p Unsupported DrawingModel (%d)", instance, model);
@@ -247,7 +257,7 @@ NPError NPP_New(NPMIMEType pluginType, NPP instance, uint16 mode, int16 argc,
     }
 
     // if the plugin uses the surface drawing model then set the java context
-    if (model == kSurface_ANPDrawingModel) {
+    if (model == kSurface_ANPDrawingModel || model == kOpenGL_ANPDrawingModel) {
         SurfaceSubPlugin* surfacePlugin = static_cast<SurfaceSubPlugin*>(obj->activePlugin);
 
         jobject context;
@@ -290,7 +300,7 @@ NPError NPP_SetWindow(NPP instance, NPWindow* window)
     return NPERR_NO_ERROR;
 }
 
-NPError NPP_NewStream(NPP instance, NPMIMEType type, NPStream* stream, NPBool seekable, uint16* stype)
+NPError NPP_NewStream(NPP instance, NPMIMEType type, NPStream* stream, NPBool seekable, uint16_t* stype)
 {
     *stype = NP_ASFILEONLY;
     return NPERR_NO_ERROR;
@@ -301,12 +311,12 @@ NPError NPP_DestroyStream(NPP instance, NPStream* stream, NPReason reason)
     return NPERR_NO_ERROR;
 }
 
-int32 NPP_WriteReady(NPP instance, NPStream* stream)
+int32_t NPP_WriteReady(NPP instance, NPStream* stream)
 {
     return 0;
 }
 
-int32 NPP_Write(NPP instance, NPStream* stream, int32 offset, int32 len, void* buffer)
+int32_t NPP_Write(NPP instance, NPStream* stream, int32_t offset, int32_t len, void* buffer)
 {
     return 0;
 }
@@ -319,7 +329,7 @@ void NPP_Print(NPP instance, NPPrint* platformPrint)
 {
 }
 
-int16 NPP_HandleEvent(NPP instance, void* event)
+int16_t NPP_HandleEvent(NPP instance, void* event)
 {
     PluginObject *obj = reinterpret_cast<PluginObject*>(instance->pdata);
     const ANPEvent* evt = reinterpret_cast<const ANPEvent*>(event);
@@ -434,7 +444,8 @@ NPError NPP_GetValue(NPP instance, NPPVariable variable, void* value)
         PluginObject* obj = static_cast<PluginObject*>(instance->pdata);
         if (obj && obj->activePlugin) {
 
-            if(obj->activePlugin->supportsDrawingModel(kSurface_ANPDrawingModel)) {
+            if(obj->activePlugin->supportsDrawingModel(kSurface_ANPDrawingModel)
+                    || obj->activePlugin->supportsDrawingModel(kOpenGL_ANPDrawingModel)) {
                 SurfaceSubPlugin* plugin = static_cast<SurfaceSubPlugin*>(obj->activePlugin);
                 jobject* surface = static_cast<jobject*>(value);
                 *surface = plugin->getSurface();

@@ -1,4 +1,4 @@
-#!/usr/bin/python2.4
+#!/usr/bin/env python
 #
 # Copyright 2008, The Android Open Source Project
 #
@@ -33,15 +33,18 @@ Do runtest --help to see full list of options.
 import glob
 import optparse
 import os
+import re
 from sets import Set
 import sys
+import time
 
 # local imports
 import adb_interface
 import android_build
-import coverage
+from coverage import coverage
 import errors
 import logger
+import make_tree
 import run_command
 from test_defs import test_defs
 from test_defs import test_walker
@@ -68,9 +71,16 @@ class TestRunner(object):
       "for a list of tests, or you can launch one or more tests.")
 
   # default value for make -jX
-  _DEFAULT_JOBS = 4
+  _DEFAULT_JOBS = 16
 
   _DALVIK_VERIFIER_OFF_PROP = "dalvik.vm.dexopt-flags = v=n"
+
+  # regular expression to match install: statements in make output
+  _RE_MAKE_INSTALL = re.compile(r'Install:\s(.+)')
+
+  # regular expression to find remote device path from a file path relative
+  # to build root
+  _RE_MAKE_INSTALL_PATH = re.compile(r'out\/target\/product\/\w+\/(.+)$')
 
   def __init__(self):
     # disable logging of timestamp
@@ -134,6 +144,9 @@ class TestRunner(object):
     parser.add_option("-o", "--coverage", dest="coverage",
                       default=False, action="store_true",
                       help="Generate code coverage metrics for test(s)")
+    parser.add_option("--coverage-target", dest="coverage_target_path",
+                      default=None,
+                      help="Path to app to collect code coverage target data for.")
     parser.add_option("-x", "--path", dest="test_path",
                       help="Run test(s) at given file system path")
     parser.add_option("-t", "--all-tests", dest="all_tests",
@@ -182,6 +195,9 @@ class TestRunner(object):
     if self._options.verbose:
       logger.SetVerbose(True)
 
+    if self._options.coverage_target_path:
+      self._options.coverage = True
+
     self._known_tests = self._ReadTests()
 
     self._options.host_lib_path = android_build.GetHostLibraryPath()
@@ -195,18 +211,21 @@ class TestRunner(object):
     Raises:
       AbortError: If a fatal error occurred when parsing the tests.
     """
-    core_test_path = os.path.join(self._root_path, self._CORE_TEST_PATH)
     try:
       known_tests = test_defs.TestDefinitions()
-      known_tests.Parse(core_test_path)
-      # read all <android root>/vendor/*/tests/testinfo/test_defs.xml paths
-      vendor_tests_pattern = os.path.join(self._root_path,
-                                          self._VENDOR_TEST_PATH)
-      test_file_paths = glob.glob(vendor_tests_pattern)
-      for test_file_path in test_file_paths:
-        known_tests.Parse(test_file_path)
-      if os.path.isfile(self._options.user_tests_file):
-        known_tests.Parse(self._options.user_tests_file)
+      # only read tests when not in path mode
+      if not self._options.test_path:
+        core_test_path = os.path.join(self._root_path, self._CORE_TEST_PATH)
+        if os.path.isfile(core_test_path):
+          known_tests.Parse(core_test_path)
+        # read all <android root>/vendor/*/tests/testinfo/test_defs.xml paths
+        vendor_tests_pattern = os.path.join(self._root_path,
+                                            self._VENDOR_TEST_PATH)
+        test_file_paths = glob.glob(vendor_tests_pattern)
+        for test_file_path in test_file_paths:
+          known_tests.Parse(test_file_path)
+        if os.path.isfile(self._options.user_tests_file):
+          known_tests.Parse(self._options.user_tests_file)
       return known_tests
     except errors.ParseError:
       raise errors.AbortError
@@ -223,84 +242,114 @@ class TestRunner(object):
 
   def _DoBuild(self):
     logger.SilentLog("Building tests...")
-    target_set = Set()
-    extra_args_set = Set()
+
     tests = self._GetTestsToRun()
+    # turn off dalvik verifier if necessary
+    self._TurnOffVerifier(tests)
+    self._DoFullBuild(tests)
+
+    target_tree = make_tree.MakeTree()
+
+    extra_args_set = []
     for test_suite in tests:
-      self._AddBuildTarget(test_suite, target_set, extra_args_set)
+      self._AddBuildTarget(test_suite, target_tree, extra_args_set)
 
     if not self._options.preview:
       self._adb.EnableAdbRoot()
     else:
       logger.Log("adb root")
-    rebuild_libcore = False
-    if target_set:
+
+    if not target_tree.IsEmpty():
       if self._options.coverage:
         coverage.EnableCoverageBuild()
-        # hack to remove core library intermediates
-        # hack is needed because:
-        # 1. EMMA_INSTRUMENT changes what source files to include in libcore
-        #    but it does not trigger a rebuild
-        # 2. there's no target (like "clear-intermediates") to remove the files
-        #    decently
-        rebuild_libcore = not coverage.TestDeviceCoverageSupport(self._adb)
-        if rebuild_libcore:
-          cmd = "rm -rf %s" % os.path.join(
-              self._root_path,
-              "out/target/common/obj/JAVA_LIBRARIES/core_intermediates/")
-          logger.Log(cmd)
-          run_command.RunCommand(cmd, return_output=False)
+        target_tree.AddPath("external/emma")
 
-      # hack to build cts dependencies
-      # TODO: remove this when build dependency support added to runtest or
-      # cts dependencies are removed
-      if self._IsCtsTests(tests):
-        # need to use make since these fail building with ONE_SHOT_MAKEFILE
-        cmd = ('make -j%s CtsTestStubs android.core.tests.runner' %
-               self._options.make_jobs)
-        logger.Log(cmd)
-        if not self._options.preview:
-          old_dir = os.getcwd()
-          os.chdir(self._root_path)
-          run_command.RunCommand(cmd, return_output=False)
-          os.chdir(old_dir)
-      # turn off dalvik verifier if necessary
-      self._TurnOffVerifier(tests)
-      target_build_string = " ".join(list(target_set))
-      extra_args_string = " ".join(list(extra_args_set))
+      target_list = target_tree.GetPrunedMakeList()
+      target_build_string = " ".join(target_list)
+      extra_args_string = " ".join(extra_args_set)
+
       # mmm cannot be used from python, so perform a similar operation using
       # ONE_SHOT_MAKEFILE
-      cmd = 'ONE_SHOT_MAKEFILE="%s" make -j%s -C "%s" files %s' % (
+      cmd = 'ONE_SHOT_MAKEFILE="%s" make -j%s -C "%s" all_modules %s' % (
           target_build_string, self._options.make_jobs, self._root_path,
           extra_args_string)
       logger.Log(cmd)
+      if not self._options.preview:
+        output = run_command.RunCommand(cmd, return_output=True, timeout_time=600)
+        self._DoInstall(output)
 
-      if self._options.preview:
-        # in preview mode, just display to the user what command would have been
-        # run
-        logger.Log("adb sync")
-      else:
-        # set timeout for build to 10 minutes, since libcore may need to
-        # be rebuilt
-        run_command.RunCommand(cmd, return_output=False, timeout_time=600)
-        logger.Log("Syncing to device...")
-        self._adb.Sync(runtime_restart=rebuild_libcore)
+  def _DoInstall(self, make_output):
+    """Install artifacts from build onto device.
 
-  def _AddBuildTarget(self, test_suite, target_set, extra_args_set):
-    build_dir = test_suite.GetBuildPath()
-    if self._AddBuildTargetPath(build_dir, target_set):
-      extra_args_set.add(test_suite.GetExtraBuildArgs())
-    for path in test_suite.GetBuildDependencies(self._options):
-      self._AddBuildTargetPath(path, target_set)
+    Looks for 'install:' text from make output to find artifacts to install.
 
-  def _AddBuildTargetPath(self, build_dir, target_set):
+    Args:
+      make_output: stdout from make command
+    """
+    for line in make_output.split("\n"):
+      m = self._RE_MAKE_INSTALL.match(line)
+      if m:
+        install_path = m.group(1)
+        if install_path.endswith(".apk"):
+          abs_install_path = os.path.join(self._root_path, install_path)
+          logger.Log("adb install -r %s" % abs_install_path)
+          logger.Log(self._adb.Install(abs_install_path))
+        else:
+          self._PushInstallFileToDevice(install_path)
+
+  def _PushInstallFileToDevice(self, install_path):
+    m = self._RE_MAKE_INSTALL_PATH.match(install_path)
+    if m:
+      remote_path = m.group(1)
+      abs_install_path = os.path.join(self._root_path, install_path)
+      logger.Log("adb push %s %s" % (abs_install_path, remote_path))
+      self._adb.Push(abs_install_path, remote_path)
+    else:
+      logger.Log("Error: Failed to recognize path of file to install %s" % install_path)
+
+  def _DoFullBuild(self, tests):
+    """If necessary, run a full 'make' command for the tests that need it."""
+    extra_args_set = Set()
+
+    # hack to build cts dependencies
+    # TODO: remove this when cts dependencies are removed
+    if self._IsCtsTests(tests):
+      # need to use make since these fail building with ONE_SHOT_MAKEFILE
+      extra_args_set.add('CtsTestStubs')
+      extra_args_set.add('android.core.tests.runner')
+    for test in tests:
+      if test.IsFullMake():
+        if test.GetExtraBuildArgs():
+          # extra args contains the args to pass to 'make'
+          extra_args_set.add(test.GetExtraBuildArgs())
+        else:
+          logger.Log("Warning: test %s needs a full build but does not specify"
+                     " extra_build_args" % test.GetName())
+
+    # check if there is actually any tests that required a full build
+    if extra_args_set:
+      cmd = ('make -j%s %s' % (self._options.make_jobs,
+                               ' '.join(list(extra_args_set))))
+      logger.Log(cmd)
+      if not self._options.preview:
+        old_dir = os.getcwd()
+        os.chdir(self._root_path)
+        output = run_command.RunCommand(cmd, return_output=True)
+        os.chdir(old_dir)
+        self._DoInstall(output)
+
+  def _AddBuildTarget(self, test_suite, target_tree, extra_args_set):
+    if not test_suite.IsFullMake():
+      build_dir = test_suite.GetBuildPath()
+      if self._AddBuildTargetPath(build_dir, target_tree):
+        extra_args_set.append(test_suite.GetExtraBuildArgs())
+      for path in test_suite.GetBuildDependencies(self._options):
+        self._AddBuildTargetPath(path, target_tree)
+
+  def _AddBuildTargetPath(self, build_dir, target_tree):
     if build_dir is not None:
-      build_file_path = os.path.join(build_dir, "Android.mk")
-      if os.path.isfile(os.path.join(self._root_path, build_file_path)):
-        target_set.add(build_file_path)
-        return True
-      else:
-        logger.Log("%s has no Android.mk, skipping" % build_dir)
+      target_tree.AddPath(build_dir)
+      return True
     return False
 
   def _GetTestsToRun(self):
@@ -342,7 +391,7 @@ class TestRunner(object):
     If one or more tests needs dalvik verifier off, and it is not already off,
     turns off verifier and reboots device to allow change to take effect.
     """
-    # hack to check if these are framework/base tests. If so, turn off verifier
+    # hack to check if these are frameworks/base tests. If so, turn off verifier
     # to allow framework tests to access package-private framework api
     framework_test = False
     for test in test_list:
@@ -356,15 +405,33 @@ class TestRunner(object):
         if self._options.preview:
           logger.Log("adb shell \"echo %s >> /data/local.prop\""
                      % self._DALVIK_VERIFIER_OFF_PROP)
+          logger.Log("adb shell chmod 644 /data/local.prop")
           logger.Log("adb reboot")
           logger.Log("adb wait-for-device")
         else:
           logger.Log("Turning off dalvik verifier and rebooting")
           self._adb.SendShellCommand("\"echo %s >> /data/local.prop\""
                                      % self._DALVIK_VERIFIER_OFF_PROP)
-          self._adb.SendCommand("reboot")
-          self._adb.SendCommand("wait-for-device", timeout_time=60,
-                                retry_count=3)
+
+          self._ChmodReboot()
+      elif not self._options.preview:
+        # check the permissions on the file
+        permout = self._adb.SendShellCommand("ls -l /data/local.prop")
+        if not "-rw-r--r--" in permout:
+          logger.Log("Fixing permissions on /data/local.prop and rebooting")
+          self._ChmodReboot()
+
+  def _ChmodReboot(self):
+    """Perform a chmod of /data/local.prop and reboot.
+    """
+    self._adb.SendShellCommand("chmod 644 /data/local.prop")
+    self._adb.SendCommand("reboot")
+    # wait for device to go offline
+    time.sleep(10)
+    self._adb.SendCommand("wait-for-device", timeout_time=60,
+                          retry_count=3)
+    self._adb.EnableAdbRoot()
+
 
   def RunTests(self):
     """Main entry method - executes the tests according to command line args."""

@@ -16,22 +16,43 @@
 
 package com.android.development;
 
+import android.accounts.Account;
+import android.accounts.AccountManager;
+import android.accounts.AccountManagerCallback;
+import android.accounts.AccountManagerFuture;
+import android.accounts.AuthenticatorDescription;
+import android.accounts.AuthenticatorException;
+import android.accounts.OnAccountsUpdateListener;
+import android.accounts.OperationCanceledException;
 import android.app.Activity;
-import android.app.Dialog;
 import android.app.AlertDialog;
-import android.content.*;
+import android.app.Dialog;
+import android.content.Context;
+import android.content.DialogInterface;
 import android.content.pm.PackageManager;
-import android.accounts.*;
+import android.content.res.Resources;
 import android.os.Bundle;
-import android.os.Parcelable;
 import android.os.Handler;
-import android.view.*;
-import android.widget.*;
-import android.widget.ArrayAdapter;
-import android.util.Log;
+import android.os.Parcelable;
 import android.text.TextUtils;
+import android.util.Log;
+import android.view.ContextMenu;
+import android.view.LayoutInflater;
+import android.view.MenuInflater;
+import android.view.MenuItem;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.ListView;
+import android.widget.Spinner;
+import android.widget.TextView;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class AccountsTester extends Activity implements OnAccountsUpdateListener {
     private static final String TAG = "AccountsTester";
@@ -46,6 +67,8 @@ public class AccountsTester extends Activity implements OnAccountsUpdateListener
     private static final int INVALIDATE_AUTH_TOKEN_DIALOG_ID = 3;
     private static final int TEST_HAS_FEATURES_DIALOG_ID = 4;
     private static final int MESSAGE_DIALOG_ID = 5;
+    private static final int GET_AUTH_TOKEN_BY_TYPE_AND_FEATURE_DIALOG_ID = 6;
+
     private EditText mDesiredAuthTokenTypeEditText;
     private EditText mDesiredFeaturesEditText;
     private volatile CharSequence mDialogMessage;
@@ -66,6 +89,8 @@ public class AccountsTester extends Activity implements OnAccountsUpdateListener
                 buttonClickListener);
         findViewById(R.id.accounts_tester_add_account).setOnClickListener(buttonClickListener);
         findViewById(R.id.accounts_tester_edit_properties).setOnClickListener(buttonClickListener);
+        findViewById(R.id.accounts_tester_get_auth_token_by_type_and_feature).setOnClickListener(
+                buttonClickListener);
         mDesiredAuthTokenTypeEditText =
                 (EditText) findViewById(R.id.accounts_tester_desired_authtokentype);
         mDesiredFeaturesEditText = (EditText) findViewById(R.id.accounts_tester_desired_features);
@@ -119,8 +144,10 @@ public class AccountsTester extends Activity implements OnAccountsUpdateListener
                 if (desc.type.equals(account.type)) {
                     final String packageName = desc.packageName;
                     try {
-                        final Context authContext = getContext().createPackageContext(packageName, 0);
-                        holder.icon.setImageDrawable(authContext.getResources().getDrawable(desc.iconId));
+                        final Context authContext = getContext().createPackageContext(packageName,
+                                0);
+                        holder.icon.setImageDrawable(authContext.getResources().getDrawable(
+                                desc.iconId));
                         holder.icon.setVisibility(View.VISIBLE);
                     } catch (PackageManager.NameNotFoundException e) {
                         Log.d(TAG, "error getting the Package Context for " + packageName, e);
@@ -136,7 +163,7 @@ public class AccountsTester extends Activity implements OnAccountsUpdateListener
 
     private void initializeAuthenticatorsSpinner() {
         mAuthenticatorDescs = mAccountManager.getAuthenticatorTypes();
-        String[] names = new String[mAuthenticatorDescs.length];
+        List<String> names = new ArrayList(mAuthenticatorDescs.length);
         for (int i = 0; i < mAuthenticatorDescs.length; i++) {
             Context authContext;
             try {
@@ -144,12 +171,17 @@ public class AccountsTester extends Activity implements OnAccountsUpdateListener
             } catch (PackageManager.NameNotFoundException e) {
                 continue;
             }
-            names[i] = authContext.getString(mAuthenticatorDescs[i].labelId);
+            try  {
+                names.add(authContext.getString(mAuthenticatorDescs[i].labelId));
+            } catch (Resources.NotFoundException e) {
+                continue;
+            }
         }
 
+        String[] namesArray = names.toArray(new String[names.size()]);
         ArrayAdapter<String> adapter =
                 new ArrayAdapter<String>(AccountsTester.this,
-                android.R.layout.simple_spinner_item, names);
+                android.R.layout.simple_spinner_item, namesArray);
         mAccountTypesSpinner.setAdapter(adapter);
     }
 
@@ -197,6 +229,8 @@ public class AccountsTester extends Activity implements OnAccountsUpdateListener
                         AccountsTester.this,
                         new CallbackToDialog(AccountsTester.this, "edit properties"),
                         null /* handler */);
+            } else if (R.id.accounts_tester_get_auth_token_by_type_and_feature == v.getId()) {
+                showDialog(GET_AUTH_TOKEN_BY_TYPE_AND_FEATURE_DIALOG_ID);
             } else {
                 // unknown button
             }
@@ -265,48 +299,92 @@ public class AccountsTester extends Activity implements OnAccountsUpdateListener
 
     @Override
     protected Dialog onCreateDialog(final int id) {
-        if (id == GET_AUTH_TOKEN_DIALOG_ID || id == INVALIDATE_AUTH_TOKEN_DIALOG_ID
-                || id == UPDATE_CREDENTIALS_DIALOG_ID || id == TEST_HAS_FEATURES_DIALOG_ID) {
-            final View view = LayoutInflater.from(this).inflate(R.layout.get_auth_token_view, null);
-            AlertDialog.Builder builder = new AlertDialog.Builder(this);
-            builder.setPositiveButton(R.string.accounts_tester_do_get_auth_token,
-                    new DialogInterface.OnClickListener() {
-                        public void onClick(DialogInterface dialog, int which) {
-                            EditText value = (EditText) view.findViewById(
-                                    R.id.accounts_tester_auth_token_type);
+        switch (id) {
+            case GET_AUTH_TOKEN_DIALOG_ID:
+            case INVALIDATE_AUTH_TOKEN_DIALOG_ID:
+            case UPDATE_CREDENTIALS_DIALOG_ID:
+            case TEST_HAS_FEATURES_DIALOG_ID: {
+                final View view = LayoutInflater.from(this).inflate(R.layout.get_auth_token_view,
+                        null);
+                AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                builder.setPositiveButton(R.string.accounts_tester_ok_button,
+                        new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int which) {
+                                EditText value = (EditText) view.findViewById(
+                                        R.id.accounts_tester_auth_token_type);
 
-                            String authTokenType = value.getText().toString();
-                            final Account account = mLongPressedAccount;
-                            if (id == GET_AUTH_TOKEN_DIALOG_ID) {
-                                mAccountManager.getAuthToken(account, authTokenType,
-                                        null /* loginOptions */, AccountsTester.this,
-                                        new CallbackToDialog(AccountsTester.this, "get auth token"),
-                                        null /* handler */);
-                            } else if (id == INVALIDATE_AUTH_TOKEN_DIALOG_ID) {
-                                mAccountManager.getAuthToken(account, authTokenType, false,
-                                        new GetAndInvalidateAuthTokenCallback(account), null);
-                            } else if (id == TEST_HAS_FEATURES_DIALOG_ID) {
-                                String[] features = TextUtils.split(authTokenType, ",");
-                                mAccountManager.hasFeatures(account, features,
-                                        new TestHasFeaturesCallback(), null);
-                            } else {
-                                mAccountManager.updateCredentials(
-                                        account,
-                                        authTokenType, null /* loginOptions */,
+                                String authTokenType = value.getText().toString();
+                                final Account account = mLongPressedAccount;
+                                if (id == GET_AUTH_TOKEN_DIALOG_ID) {
+                                    mAccountManager.getAuthToken(account,
+                                            authTokenType,
+                                            null /* loginOptions */,
+                                            AccountsTester.this,
+                                            new CallbackToDialog(AccountsTester.this,
+                                                    "get auth token"),
+                                            null /* handler */);
+                                } else if (id == INVALIDATE_AUTH_TOKEN_DIALOG_ID) {
+                                    mAccountManager.getAuthToken(account, authTokenType, false,
+                                            new GetAndInvalidateAuthTokenCallback(account), null);
+                                } else if (id == TEST_HAS_FEATURES_DIALOG_ID) {
+                                    String[] features = TextUtils.split(authTokenType, ",");
+                                    mAccountManager.hasFeatures(account, features,
+                                            new TestHasFeaturesCallback(), null);
+                                } else {
+                                    mAccountManager.updateCredentials(
+                                            account,
+                                            authTokenType, null /* loginOptions */,
+                                            AccountsTester.this,
+                                            new CallbackToDialog(AccountsTester.this, "update"),
+                                            null /* handler */);
+                                }
+                            }
+                });
+                builder.setView(view);
+                return builder.create();
+            }
+
+            case GET_AUTH_TOKEN_BY_TYPE_AND_FEATURE_DIALOG_ID: {
+                final View view = LayoutInflater.from(this).inflate(R.layout.get_features_view,
+                        null);
+                AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                builder.setPositiveButton(R.string.accounts_tester_ok_button,
+                        new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int which) {
+                                EditText value = (EditText) view.findViewById(
+                                        R.id.accounts_tester_auth_token_type);
+
+                                String authTokenType = value.getText().toString();
+
+                                value = (EditText) view.findViewById(
+                                        R.id.accounts_tester_features);
+
+                                String features = value.getText().toString();
+
+                                final Account account = mLongPressedAccount;
+                                mAccountManager.getAuthTokenByFeatures(
+                                        getSelectedAuthenticator().type,
+                                        authTokenType,
+                                        TextUtils.isEmpty(features) ? null : features.split(" "),
                                         AccountsTester.this,
-                                        new CallbackToDialog(AccountsTester.this, "update"),
+                                        null /* addAccountOptions */,
+                                        null /* getAuthTokenOptions */,
+                                        new CallbackToDialog(AccountsTester.this,
+                                                "get auth token by features"),
                                         null /* handler */);
                             }
-                        }
-            });
-            builder.setView(view);
-            return builder.create();
+                });
+                builder.setView(view);
+                return builder.create();
+            }
+
+            case MESSAGE_DIALOG_ID: {
+                AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                builder.setMessage(mDialogMessage);
+                return builder.create();
+            }
         }
-        if (id == MESSAGE_DIALOG_ID) {
-            AlertDialog.Builder builder = new AlertDialog.Builder(this);
-            builder.setMessage(mDialogMessage);
-            return builder.create();
-        }
+
         return super.onCreateDialog(id);
     }
 
@@ -344,7 +422,8 @@ public class AccountsTester extends Activity implements OnAccountsUpdateListener
         }
     }
 
-    AccountManagerCallback<Bundle> newAuthTokensCallback(String type, String authTokenType, String[] features) {
+    AccountManagerCallback<Bundle> newAuthTokensCallback(String type, String authTokenType,
+            String[] features) {
         return new GetAuthTokenCallback(type, authTokenType, features);
     }
 

@@ -68,7 +68,7 @@ See test_defs.xsd for more information.
     continuous="true" />
 
 <test name="frameworks-telephony"
-    build_path="frameworks/base/telephony/tests/telephonytests"
+    build_path="frameworks/opt/telephony/tests/telephonytests"
     package="com.android.frameworks.telephonytests"
     coverage_target="framework"
     continuous="true" />
@@ -94,7 +94,6 @@ See test_defs.xsd for more information.
 <test name="keystore-unit"
     build_path="frameworks/base/keystore/tests"
     package="android.security.tests"
-    runner=".KeyStoreTestRunner"
     coverage_target="framework"
     continuous="true" />
 
@@ -117,13 +116,29 @@ See test_defs.xsd for more information.
     coverage_target="framework"
     continuous="true" />
 
-<test-native name="libui"
-    build_path="frameworks/base/libs/ui/tests"
-    description="Framework libui unit tests." />
+<test name="ex-variablespeed"
+    build_path="frameworks/ex/variablespeed/tests"
+    package="com.android.ex.variablespeed.tests"
+    coverage_target="framework"
+    continuous="true"
+    description="Framework variable speed audio tests" />
+
+<test-native name="libandroidfw"
+    build_path="frameworks/base/libs/androidfw/tests"
+    description="Framework libandroidfw unit tests." />
 
 <test-native name="libutils"
-    build_path="frameworks/base/libs/utils/tests"
+    build_path="frameworks/native/libs/utils/tests"
     description="Framework libutils unit tests." />
+
+<test-native name="libinput"
+    build_path="frameworks/base/services/input/tests"
+    description="Framework libinput unit tests." />
+
+<test name="volley"
+    build_path="frameworks/support/volley/tests"
+    package="com.android.volley.tests"
+    continuous="true" />
 
 <!--  end of framework tests -->
 
@@ -224,6 +239,13 @@ See test_defs.xsd for more information.
     runner="android.test.InstrumentationCtsTestRunner"
     suite="cts" />
 
+<test name="cts-accounts"
+    build_path="cts/tests/tests/accounts"
+    package="android.accounts.cts"
+    runner="android.test.InstrumentationTestRunner"
+    coverage_target="framework"
+    suite="cts" />
+
 <test name="cts-api-signature"
     build_path="cts/tests/SignatureTest"
     package="android.tests.sigtest"
@@ -233,12 +255,6 @@ See test_defs.xsd for more information.
 <test name="cts-api-signature-func"
     build_path="cts/tests/SignatureTest"
     package="android.tests.sigtest.tests"
-    suite="cts" />
-
-<test name="cts-apidemos"
-    build_path="cts/tests/ApiDemosReferenceTest"
-    package="android.apidemos.cts"
-    coverage_target="ApiDemos"
     suite="cts" />
 
 <test name="cts-app"
@@ -279,7 +295,7 @@ See test_defs.xsd for more information.
 <test name="cts-hardware"
     build_path="cts/tests/tests/hardware"
     package="com.android.cts.hardware"
-    runner="android.test.InstrumentationTestRunner"
+    runner="android.test.InstrumentationCtsTestRunner"
     coverage_target="framework"
     continuous="true"
     suite="cts" />
@@ -301,7 +317,7 @@ See test_defs.xsd for more information.
 <test name="cts-net"
     build_path="cts/tests/tests/net"
     package="com.android.cts.net"
-    runner="android.test.InstrumentationCtsTestRunner"
+    runner="android.test.InstrumentationTestRunner"
     coverage_target="framework"
     suite="cts" />
 
@@ -310,36 +326,6 @@ See test_defs.xsd for more information.
     package="com.android.cts.os"
     runner="android.test.InstrumentationCtsTestRunner"
     coverage_target="framework"
-    suite="cts" />
-
-<test name="cts-perf1"
-    build_path="cts/tests/tests/performance"
-    package="com.android.cts.performance"
-    runner="android.test.InstrumentationCtsTestRunner"
-    suite="cts" />
-
-<test name="cts-perf2"
-    build_path="cts/tests/tests/performance2"
-    package="com.android.cts.performance2"
-    runner="android.test.InstrumentationCtsTestRunner"
-    suite="cts" />
-
-<test name="cts-perf3"
-    build_path="cts/tests/tests/performance3"
-    package="com.android.cts.performance3"
-    runner="android.test.InstrumentationCtsTestRunner"
-    suite="cts" />
-
-<test name="cts-perf4"
-    build_path="cts/tests/tests/performance4"
-    package="com.android.cts.performance4"
-    runner="android.test.InstrumentationCtsTestRunner"
-    suite="cts" />
-
-<test name="cts-perf5"
-    build_path="cts/tests/tests/performance5"
-    package="com.android.cts.performance5"
-    runner="android.test.InstrumentationCtsTestRunner"
     suite="cts" />
 
 <test name="cts-provider"
@@ -398,15 +384,23 @@ See test_defs.xsd for more information.
     build_path="development/samples/ApiDemos"
     package="com.example.android.apis.tests" />
 
+<test name="applicationsprov"
+    build_path="packages/providers/ApplicationsProvider"
+    package="com.android.providers.applications.tests"
+    coverage_target="ApplicationsProvider"
+    continuous="true" />
+
 <test name="browser"
     build_path="packages/apps/Browser"
     package="com.android.browser.tests"
-    coverage_target="Browser" />
+    coverage_target="Browser"
+    continuous="true" />
 
 <test name="calculator"
     build_path="packages/apps/Calculator"
     package="com.android.calculator2.tests"
-    coverage_target="Calculator" />
+    coverage_target="Calculator"
+    continuous="true" />
 
 <test name="calendar"
     build_path="packages/apps/Calendar"
@@ -418,6 +412,14 @@ See test_defs.xsd for more information.
     build_path="packages/providers/CalendarProvider"
     package="com.android.providers.calendar.tests"
     coverage_target="CalendarProvider"
+    continuous="true" />
+
+<test name="camera-functional"
+    build_path="packages/apps/Camera"
+    package="com.google.android.camera.tests"
+    runner="com.android.camera.CameraTestRunner"
+    coverage_target="Camera"
+    description="Camera functional test"
     continuous="true" />
 
 <test name="contactsprov"
@@ -440,6 +442,12 @@ See test_defs.xsd for more information.
     runner="com.android.contacts.ContactsLaunchPerformance"
     description="Launch performance for Contacts." />
 
+<test name="downloadprovider"
+    build_path="packages/providers/DownloadProvider/tests"
+    package="com.android.providers.downloads.tests"
+    coverage_target="DownloadProvider"
+    continuous="true" />
+
 <test name="downloadprovider-permission"
     build_path="packages/providers/DownloadProvider/tests/permission"
     package="com.android.providers.downloads.permission.tests"
@@ -457,6 +465,12 @@ See test_defs.xsd for more information.
     package="com.android.email.tests"
     class="com.android.email.SmallTests"
     coverage_target="Email" />
+
+<test name="exchange"
+    build_path="packages/apps/Exchange"
+    package="com.android.exchange.tests"
+    coverage_target="Exchange"
+    continuous="true" />
 
 <test name="musicplayer"
     build_path="packages/apps/Music"
@@ -480,6 +494,13 @@ See test_defs.xsd for more information.
     build_path="packages/apps/QuickSearchBox"
     package="com.android.quicksearchbox.tests"
     coverage_target="QuickSearchBox" />
+
+<test name="systemui"
+    build_path="frameworks/base/packages/SystemUI"
+    package="com.android.systemui.tests"
+    coverage_target="SystemUI"
+    continuous="true"
+    description="SystemUI tests" />
 
 <!--  native tests  -->
 
@@ -505,10 +526,16 @@ See test_defs.xsd for more information.
     description="Google test."
     extra_build_args="GTEST_TESTS=1" />
 
+<!-- Libjingle -->
+<test-native name="libjingle"
+    build_path="vendor/google/libraries/libjingle"
+    description="Libjingle."
+    full_make="true"
+    extra_build_args="LIBJINGLE_TESTS=1" />
 
 <!-- host java tests -->
 <test-host name="cts-appsecurity"
-    build_path="cts/tests/appsecurity-tests"
+    build_path="cts/hostsidetests/appsecurity"
     class="com.android.cts.appsecurity.AppSecurityTests"
     jar_name="CtsAppSecurityTests.jar"
     suite="cts" />

@@ -1,7 +1,10 @@
-#Organize Import Order
-#Wed Apr 04 11:32:05 CDT 2007
-4=javax
-3=java
-2=android
-1=org
-0=com
+9=javax
+8=java
+7=org
+6=net
+5=libcore
+4=junit
+3=gov
+2=dalvik
+1=com
+0=android

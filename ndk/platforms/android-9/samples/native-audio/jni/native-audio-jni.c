@@ -30,7 +30,7 @@
 
 // for native audio
 #include <SLES/OpenSLES.h>
-#include "SLES/OpenSLES_Android.h"
+#include <SLES/OpenSLES_Android.h>
 
 // for native asset manager
 #include <sys/types.h>
@@ -60,6 +60,8 @@ static SLObjectItf bqPlayerObject = NULL;
 static SLPlayItf bqPlayerPlay;
 static SLAndroidSimpleBufferQueueItf bqPlayerBufferQueue;
 static SLEffectSendItf bqPlayerEffectSend;
+static SLMuteSoloItf bqPlayerMuteSolo;
+static SLVolumeItf bqPlayerVolume;
 
 // aux effect on the output mix, used by the buffer queue player
 static const SLEnvironmentalReverbSettings reverbSettings =
@@ -69,11 +71,15 @@ static const SLEnvironmentalReverbSettings reverbSettings =
 static SLObjectItf uriPlayerObject = NULL;
 static SLPlayItf uriPlayerPlay;
 static SLSeekItf uriPlayerSeek;
+static SLMuteSoloItf uriPlayerMuteSolo;
+static SLVolumeItf uriPlayerVolume;
 
 // file descriptor player interfaces
 static SLObjectItf fdPlayerObject = NULL;
 static SLPlayItf fdPlayerPlay;
 static SLSeekItf fdPlayerSeek;
+static SLMuteSoloItf fdPlayerMuteSolo;
+static SLVolumeItf fdPlayerVolume;
 
 // recorder interfaces
 static SLObjectItf recorderObject = NULL;
@@ -119,6 +125,7 @@ void bqPlayerCallback(SLAndroidSimpleBufferQueueItf bq, void *context)
         // the most likely other result is SL_RESULT_BUFFER_INSUFFICIENT,
         // which for this code example would indicate a programming error
         assert(SL_RESULT_SUCCESS == result);
+        (void)result;
     }
 }
 
@@ -147,24 +154,29 @@ void Java_com_example_nativeaudio_NativeAudio_createEngine(JNIEnv* env, jclass c
     // create engine
     result = slCreateEngine(&engineObject, 0, NULL, 0, NULL, NULL);
     assert(SL_RESULT_SUCCESS == result);
+    (void)result;
 
     // realize the engine
     result = (*engineObject)->Realize(engineObject, SL_BOOLEAN_FALSE);
     assert(SL_RESULT_SUCCESS == result);
+    (void)result;
 
     // get the engine interface, which is needed in order to create other objects
     result = (*engineObject)->GetInterface(engineObject, SL_IID_ENGINE, &engineEngine);
     assert(SL_RESULT_SUCCESS == result);
+    (void)result;
 
     // create output mix, with environmental reverb specified as a non-required interface
     const SLInterfaceID ids[1] = {SL_IID_ENVIRONMENTALREVERB};
     const SLboolean req[1] = {SL_BOOLEAN_FALSE};
     result = (*engineEngine)->CreateOutputMix(engineEngine, &outputMixObject, 1, ids, req);
     assert(SL_RESULT_SUCCESS == result);
+    (void)result;
 
     // realize the output mix
     result = (*outputMixObject)->Realize(outputMixObject, SL_BOOLEAN_FALSE);
     assert(SL_RESULT_SUCCESS == result);
+    (void)result;
 
     // get the environmental reverb interface
     // this could fail if the environmental reverb effect is not available,
@@ -175,6 +187,7 @@ void Java_com_example_nativeaudio_NativeAudio_createEngine(JNIEnv* env, jclass c
     if (SL_RESULT_SUCCESS == result) {
         result = (*outputMixEnvironmentalReverb)->SetEnvironmentalReverbProperties(
                 outputMixEnvironmentalReverb, &reverbSettings);
+        (void)result;
     }
     // ignore unsuccessful result codes for environmental reverb, as it is optional for this example
 
@@ -199,38 +212,58 @@ void Java_com_example_nativeaudio_NativeAudio_createBufferQueueAudioPlayer(JNIEn
     SLDataSink audioSnk = {&loc_outmix, NULL};
 
     // create audio player
-    const SLInterfaceID ids[2] = {SL_IID_BUFFERQUEUE, SL_IID_EFFECTSEND};
-    const SLboolean req[2] = {SL_BOOLEAN_TRUE, SL_BOOLEAN_TRUE};
+    const SLInterfaceID ids[3] = {SL_IID_BUFFERQUEUE, SL_IID_EFFECTSEND,
+            /*SL_IID_MUTESOLO,*/ SL_IID_VOLUME};
+    const SLboolean req[3] = {SL_BOOLEAN_TRUE, SL_BOOLEAN_TRUE,
+            /*SL_BOOLEAN_TRUE,*/ SL_BOOLEAN_TRUE};
     result = (*engineEngine)->CreateAudioPlayer(engineEngine, &bqPlayerObject, &audioSrc, &audioSnk,
-            2, ids, req);
+            3, ids, req);
     assert(SL_RESULT_SUCCESS == result);
+    (void)result;
 
     // realize the player
     result = (*bqPlayerObject)->Realize(bqPlayerObject, SL_BOOLEAN_FALSE);
     assert(SL_RESULT_SUCCESS == result);
+    (void)result;
 
     // get the play interface
     result = (*bqPlayerObject)->GetInterface(bqPlayerObject, SL_IID_PLAY, &bqPlayerPlay);
     assert(SL_RESULT_SUCCESS == result);
+    (void)result;
 
     // get the buffer queue interface
     result = (*bqPlayerObject)->GetInterface(bqPlayerObject, SL_IID_BUFFERQUEUE,
             &bqPlayerBufferQueue);
     assert(SL_RESULT_SUCCESS == result);
+    (void)result;
 
     // register callback on the buffer queue
     result = (*bqPlayerBufferQueue)->RegisterCallback(bqPlayerBufferQueue, bqPlayerCallback, NULL);
     assert(SL_RESULT_SUCCESS == result);
+    (void)result;
 
     // get the effect send interface
     result = (*bqPlayerObject)->GetInterface(bqPlayerObject, SL_IID_EFFECTSEND,
             &bqPlayerEffectSend);
     assert(SL_RESULT_SUCCESS == result);
+    (void)result;
+
+#if 0   // mute/solo is not supported for sources that are known to be mono, as this is
+    // get the mute/solo interface
+    result = (*bqPlayerObject)->GetInterface(bqPlayerObject, SL_IID_MUTESOLO, &bqPlayerMuteSolo);
+    assert(SL_RESULT_SUCCESS == result);
+    (void)result;
+#endif
+
+    // get the volume interface
+    result = (*bqPlayerObject)->GetInterface(bqPlayerObject, SL_IID_VOLUME, &bqPlayerVolume);
+    assert(SL_RESULT_SUCCESS == result);
+    (void)result;
 
     // set the player's state to playing
     result = (*bqPlayerPlay)->SetPlayState(bqPlayerPlay, SL_PLAYSTATE_PLAYING);
     assert(SL_RESULT_SUCCESS == result);
-
+    (void)result;
 }
 
 
@@ -241,7 +274,7 @@ jboolean Java_com_example_nativeaudio_NativeAudio_createUriAudioPlayer(JNIEnv* e
     SLresult result;
 
     // convert Java string to UTF-8
-    const jbyte *utf8 = (*env)->GetStringUTFChars(env, uri, NULL);
+    const char *utf8 = (*env)->GetStringUTFChars(env, uri, NULL);
     assert(NULL != utf8);
 
     // configure audio source
@@ -255,13 +288,14 @@ jboolean Java_com_example_nativeaudio_NativeAudio_createUriAudioPlayer(JNIEnv* e
     SLDataSink audioSnk = {&loc_outmix, NULL};
 
     // create audio player
-    const SLInterfaceID ids[1] = {SL_IID_SEEK};
-    const SLboolean req[1] = {SL_BOOLEAN_TRUE};
+    const SLInterfaceID ids[3] = {SL_IID_SEEK, SL_IID_MUTESOLO, SL_IID_VOLUME};
+    const SLboolean req[3] = {SL_BOOLEAN_TRUE, SL_BOOLEAN_TRUE, SL_BOOLEAN_TRUE};
     result = (*engineEngine)->CreateAudioPlayer(engineEngine, &uriPlayerObject, &audioSrc,
-            &audioSnk, 1, ids, req);
+            &audioSnk, 3, ids, req);
     // note that an invalid URI is not detected here, but during prepare/prefetch on Android,
     // or possibly during Realize on other platforms
     assert(SL_RESULT_SUCCESS == result);
+    (void)result;
 
     // release the Java string and UTF-8
     (*env)->ReleaseStringUTFChars(env, uri, utf8);
@@ -278,20 +312,29 @@ jboolean Java_com_example_nativeaudio_NativeAudio_createUriAudioPlayer(JNIEnv* e
     // get the play interface
     result = (*uriPlayerObject)->GetInterface(uriPlayerObject, SL_IID_PLAY, &uriPlayerPlay);
     assert(SL_RESULT_SUCCESS == result);
+    (void)result;
 
     // get the seek interface
     result = (*uriPlayerObject)->GetInterface(uriPlayerObject, SL_IID_SEEK, &uriPlayerSeek);
     assert(SL_RESULT_SUCCESS == result);
+    (void)result;
 
-    // enable whole file looping
-    result = (*uriPlayerSeek)->SetLoop(uriPlayerSeek, SL_BOOLEAN_TRUE, 0, SL_TIME_UNKNOWN);
+    // get the mute/solo interface
+    result = (*uriPlayerObject)->GetInterface(uriPlayerObject, SL_IID_MUTESOLO, &uriPlayerMuteSolo);
     assert(SL_RESULT_SUCCESS == result);
+    (void)result;
+
+    // get the volume interface
+    result = (*uriPlayerObject)->GetInterface(uriPlayerObject, SL_IID_VOLUME, &uriPlayerVolume);
+    assert(SL_RESULT_SUCCESS == result);
+    (void)result;
 
     return JNI_TRUE;
 }
 
 
 // set the playing state for the URI audio player
+// to PLAYING (true) or PAUSED (false)
 void Java_com_example_nativeaudio_NativeAudio_setPlayingUriAudioPlayer(JNIEnv* env,
         jclass clazz, jboolean isPlaying)
 {
@@ -304,11 +347,145 @@ void Java_com_example_nativeaudio_NativeAudio_setPlayingUriAudioPlayer(JNIEnv* e
         result = (*uriPlayerPlay)->SetPlayState(uriPlayerPlay, isPlaying ?
             SL_PLAYSTATE_PLAYING : SL_PLAYSTATE_PAUSED);
         assert(SL_RESULT_SUCCESS == result);
-
+        (void)result;
     }
 
 }
 
+
+// set the whole file looping state for the URI audio player
+void Java_com_example_nativeaudio_NativeAudio_setLoopingUriAudioPlayer(JNIEnv* env,
+        jclass clazz, jboolean isLooping)
+{
+    SLresult result;
+
+    // make sure the URI audio player was created
+    if (NULL != uriPlayerSeek) {
+
+        // set the looping state
+        result = (*uriPlayerSeek)->SetLoop(uriPlayerSeek, (SLboolean) isLooping, 0,
+                SL_TIME_UNKNOWN);
+        assert(SL_RESULT_SUCCESS == result);
+        (void)result;
+    }
+
+}
+
+
+// expose the mute/solo APIs to Java for one of the 3 players
+
+static SLMuteSoloItf getMuteSolo()
+{
+    if (uriPlayerMuteSolo != NULL)
+        return uriPlayerMuteSolo;
+    else if (fdPlayerMuteSolo != NULL)
+        return fdPlayerMuteSolo;
+    else
+        return bqPlayerMuteSolo;
+}
+
+void Java_com_example_nativeaudio_NativeAudio_setChannelMuteUriAudioPlayer(JNIEnv* env,
+        jclass clazz, jint chan, jboolean mute)
+{
+    SLresult result;
+    SLMuteSoloItf muteSoloItf = getMuteSolo();
+    if (NULL != muteSoloItf) {
+        result = (*muteSoloItf)->SetChannelMute(muteSoloItf, chan, mute);
+        assert(SL_RESULT_SUCCESS == result);
+        (void)result;
+    }
+}
+
+void Java_com_example_nativeaudio_NativeAudio_setChannelSoloUriAudioPlayer(JNIEnv* env,
+        jclass clazz, jint chan, jboolean solo)
+{
+    SLresult result;
+    SLMuteSoloItf muteSoloItf = getMuteSolo();
+    if (NULL != muteSoloItf) {
+        result = (*muteSoloItf)->SetChannelSolo(muteSoloItf, chan, solo);
+        assert(SL_RESULT_SUCCESS == result);
+        (void)result;
+    }
+}
+
+int Java_com_example_nativeaudio_NativeAudio_getNumChannelsUriAudioPlayer(JNIEnv* env, jclass clazz)
+{
+    SLuint8 numChannels;
+    SLresult result;
+    SLMuteSoloItf muteSoloItf = getMuteSolo();
+    if (NULL != muteSoloItf) {
+        result = (*muteSoloItf)->GetNumChannels(muteSoloItf, &numChannels);
+        if (SL_RESULT_PRECONDITIONS_VIOLATED == result) {
+            // channel count is not yet known
+            numChannels = 0;
+        } else {
+            assert(SL_RESULT_SUCCESS == result);
+        }
+    } else {
+        numChannels = 0;
+    }
+    return numChannels;
+}
+
+// expose the volume APIs to Java for one of the 3 players
+
+static SLVolumeItf getVolume()
+{
+    if (uriPlayerVolume != NULL)
+        return uriPlayerVolume;
+    else if (fdPlayerVolume != NULL)
+        return fdPlayerVolume;
+    else
+        return bqPlayerVolume;
+}
+
+void Java_com_example_nativeaudio_NativeAudio_setVolumeUriAudioPlayer(JNIEnv* env, jclass clazz,
+        jint millibel)
+{
+    SLresult result;
+    SLVolumeItf volumeItf = getVolume();
+    if (NULL != volumeItf) {
+        result = (*volumeItf)->SetVolumeLevel(volumeItf, millibel);
+        assert(SL_RESULT_SUCCESS == result);
+        (void)result;
+    }
+}
+
+void Java_com_example_nativeaudio_NativeAudio_setMuteUriAudioPlayer(JNIEnv* env, jclass clazz,
+        jboolean mute)
+{
+    SLresult result;
+    SLVolumeItf volumeItf = getVolume();
+    if (NULL != volumeItf) {
+        result = (*volumeItf)->SetMute(volumeItf, mute);
+        assert(SL_RESULT_SUCCESS == result);
+        (void)result;
+    }
+}
+
+void Java_com_example_nativeaudio_NativeAudio_enableStereoPositionUriAudioPlayer(JNIEnv* env,
+        jclass clazz, jboolean enable)
+{
+    SLresult result;
+    SLVolumeItf volumeItf = getVolume();
+    if (NULL != volumeItf) {
+        result = (*volumeItf)->EnableStereoPosition(volumeItf, enable);
+        assert(SL_RESULT_SUCCESS == result);
+        (void)result;
+    }
+}
+
+void Java_com_example_nativeaudio_NativeAudio_setStereoPositionUriAudioPlayer(JNIEnv* env,
+        jclass clazz, jint permille)
+{
+    SLresult result;
+    SLVolumeItf volumeItf = getVolume();
+    if (NULL != volumeItf) {
+        result = (*volumeItf)->SetStereoPosition(volumeItf, permille);
+        assert(SL_RESULT_SUCCESS == result);
+        (void)result;
+    }
+}
 
 // enable reverb on the buffer queue player
 jboolean Java_com_example_nativeaudio_NativeAudio_enableReverb(JNIEnv* env, jclass clazz,
@@ -336,7 +513,6 @@ jboolean Java_com_example_nativeaudio_NativeAudio_enableReverb(JNIEnv* env, jcla
 jboolean Java_com_example_nativeaudio_NativeAudio_selectClip(JNIEnv* env, jclass clazz, jint which,
         jint count)
 {
-    short *oldBuffer = nextBuffer;
     switch (which) {
     case 0:     // CLIP_NONE
         nextBuffer = (short *) NULL;
@@ -394,13 +570,13 @@ jboolean Java_com_example_nativeaudio_NativeAudio_createAssetAudioPlayer(JNIEnv*
     SLresult result;
 
     // convert Java string to UTF-8
-    const jbyte *utf8 = (*env)->GetStringUTFChars(env, filename, NULL);
+    const char *utf8 = (*env)->GetStringUTFChars(env, filename, NULL);
     assert(NULL != utf8);
 
     // use asset manager to open asset by filename
     AAssetManager* mgr = AAssetManager_fromJava(env, assetManager);
     assert(NULL != mgr);
-    AAsset* asset = AAssetManager_open(mgr, (const char *) utf8, AASSET_MODE_UNKNOWN);
+    AAsset* asset = AAssetManager_open(mgr, utf8, AASSET_MODE_UNKNOWN);
 
     // release the Java string and UTF-8
     (*env)->ReleaseStringUTFChars(env, filename, utf8);
@@ -426,27 +602,42 @@ jboolean Java_com_example_nativeaudio_NativeAudio_createAssetAudioPlayer(JNIEnv*
     SLDataSink audioSnk = {&loc_outmix, NULL};
 
     // create audio player
-    const SLInterfaceID ids[1] = {SL_IID_SEEK};
-    const SLboolean req[1] = {SL_BOOLEAN_TRUE};
+    const SLInterfaceID ids[3] = {SL_IID_SEEK, SL_IID_MUTESOLO, SL_IID_VOLUME};
+    const SLboolean req[3] = {SL_BOOLEAN_TRUE, SL_BOOLEAN_TRUE, SL_BOOLEAN_TRUE};
     result = (*engineEngine)->CreateAudioPlayer(engineEngine, &fdPlayerObject, &audioSrc, &audioSnk,
-            1, ids, req);
+            3, ids, req);
     assert(SL_RESULT_SUCCESS == result);
+    (void)result;
 
     // realize the player
     result = (*fdPlayerObject)->Realize(fdPlayerObject, SL_BOOLEAN_FALSE);
     assert(SL_RESULT_SUCCESS == result);
+    (void)result;
 
     // get the play interface
     result = (*fdPlayerObject)->GetInterface(fdPlayerObject, SL_IID_PLAY, &fdPlayerPlay);
     assert(SL_RESULT_SUCCESS == result);
+    (void)result;
 
     // get the seek interface
     result = (*fdPlayerObject)->GetInterface(fdPlayerObject, SL_IID_SEEK, &fdPlayerSeek);
     assert(SL_RESULT_SUCCESS == result);
+    (void)result;
+
+    // get the mute/solo interface
+    result = (*fdPlayerObject)->GetInterface(fdPlayerObject, SL_IID_MUTESOLO, &fdPlayerMuteSolo);
+    assert(SL_RESULT_SUCCESS == result);
+    (void)result;
+
+    // get the volume interface
+    result = (*fdPlayerObject)->GetInterface(fdPlayerObject, SL_IID_VOLUME, &fdPlayerVolume);
+    assert(SL_RESULT_SUCCESS == result);
+    (void)result;
 
     // enable whole file looping
     result = (*fdPlayerSeek)->SetLoop(fdPlayerSeek, SL_BOOLEAN_TRUE, 0, SL_TIME_UNKNOWN);
     assert(SL_RESULT_SUCCESS == result);
+    (void)result;
 
     return JNI_TRUE;
 }
@@ -465,7 +656,7 @@ void Java_com_example_nativeaudio_NativeAudio_setPlayingAssetAudioPlayer(JNIEnv*
         result = (*fdPlayerPlay)->SetPlayState(fdPlayerPlay, isPlaying ?
             SL_PLAYSTATE_PLAYING : SL_PLAYSTATE_PAUSED);
         assert(SL_RESULT_SUCCESS == result);
-
+        (void)result;
     }
 
 }
@@ -507,16 +698,19 @@ jboolean Java_com_example_nativeaudio_NativeAudio_createAudioRecorder(JNIEnv* en
     // get the record interface
     result = (*recorderObject)->GetInterface(recorderObject, SL_IID_RECORD, &recorderRecord);
     assert(SL_RESULT_SUCCESS == result);
+    (void)result;
 
     // get the buffer queue interface
     result = (*recorderObject)->GetInterface(recorderObject, SL_IID_ANDROIDSIMPLEBUFFERQUEUE,
             &recorderBufferQueue);
     assert(SL_RESULT_SUCCESS == result);
+    (void)result;
 
     // register callback on the buffer queue
     result = (*recorderBufferQueue)->RegisterCallback(recorderBufferQueue, bqRecorderCallback,
             NULL);
     assert(SL_RESULT_SUCCESS == result);
+    (void)result;
 
     return JNI_TRUE;
 }
@@ -530,8 +724,10 @@ void Java_com_example_nativeaudio_NativeAudio_startRecording(JNIEnv* env, jclass
     // in case already recording, stop recording and clear buffer queue
     result = (*recorderRecord)->SetRecordState(recorderRecord, SL_RECORDSTATE_STOPPED);
     assert(SL_RESULT_SUCCESS == result);
+    (void)result;
     result = (*recorderBufferQueue)->Clear(recorderBufferQueue);
     assert(SL_RESULT_SUCCESS == result);
+    (void)result;
 
     // the buffer is not valid for playback yet
     recorderSize = 0;
@@ -543,11 +739,12 @@ void Java_com_example_nativeaudio_NativeAudio_startRecording(JNIEnv* env, jclass
     // the most likely other result is SL_RESULT_BUFFER_INSUFFICIENT,
     // which for this code example would indicate a programming error
     assert(SL_RESULT_SUCCESS == result);
+    (void)result;
 
     // start recording
     result = (*recorderRecord)->SetRecordState(recorderRecord, SL_RECORDSTATE_RECORDING);
     assert(SL_RESULT_SUCCESS == result);
-
+    (void)result;
 }
 
 
@@ -562,6 +759,8 @@ void Java_com_example_nativeaudio_NativeAudio_shutdown(JNIEnv* env, jclass clazz
         bqPlayerPlay = NULL;
         bqPlayerBufferQueue = NULL;
         bqPlayerEffectSend = NULL;
+        bqPlayerMuteSolo = NULL;
+        bqPlayerVolume = NULL;
     }
 
     // destroy file descriptor audio player object, and invalidate all associated interfaces
@@ -570,6 +769,8 @@ void Java_com_example_nativeaudio_NativeAudio_shutdown(JNIEnv* env, jclass clazz
         fdPlayerObject = NULL;
         fdPlayerPlay = NULL;
         fdPlayerSeek = NULL;
+        fdPlayerMuteSolo = NULL;
+        fdPlayerVolume = NULL;
     }
 
     // destroy URI audio player object, and invalidate all associated interfaces
@@ -578,6 +779,8 @@ void Java_com_example_nativeaudio_NativeAudio_shutdown(JNIEnv* env, jclass clazz
         uriPlayerObject = NULL;
         uriPlayerPlay = NULL;
         uriPlayerSeek = NULL;
+        uriPlayerMuteSolo = NULL;
+        uriPlayerVolume = NULL;
     }
 
     // destroy audio recorder object, and invalidate all associated interfaces

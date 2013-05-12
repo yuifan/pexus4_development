@@ -37,7 +37,7 @@ import android.widget.TextView;
 
 /**
  * View that draws, takes keystrokes, etc. for a simple LunarLander game.
- * 
+ *
  * Has a mode which RUNNING, PAUSED, etc. Has a x, y, dx, dy, ... capturing the
  * current ship physics. All x/y etc. are measured with (0,0) at the lower left.
  * updatePhysics() advances the physics based on realtime. draw() renders the
@@ -112,14 +112,14 @@ class LunarView extends SurfaceView implements SurfaceHolder.Callback {
 
         /**
          * Current height of the surface/canvas.
-         * 
+         *
          * @see #setSurfaceSize
          */
         private int mCanvasHeight = 1;
 
         /**
          * Current width of the surface/canvas.
-         * 
+         *
          * @see #setSurfaceSize
          */
         private int mCanvasWidth = 1;
@@ -195,6 +195,8 @@ class LunarView extends SurfaceView implements SurfaceHolder.Callback {
 
         /** Indicate whether the surface has been created & is ready to draw */
         private boolean mRun = false;
+
+        private final Object mRunLock = new Object();
 
         /** Scratch rect object. */
         private RectF mScratchRect;
@@ -321,7 +323,7 @@ class LunarView extends SurfaceView implements SurfaceHolder.Callback {
          * Restores game state from the indicated Bundle. Typically called when
          * the Activity is being restored after having been previously
          * destroyed.
-         * 
+         *
          * @param savedState Bundle containing the game state
          */
         public synchronized void restoreState(Bundle savedState) {
@@ -356,7 +358,13 @@ class LunarView extends SurfaceView implements SurfaceHolder.Callback {
                     c = mSurfaceHolder.lockCanvas(null);
                     synchronized (mSurfaceHolder) {
                         if (mMode == STATE_RUNNING) updatePhysics();
-                        doDraw(c);
+                        // Critical section. Do not allow mRun to be set false until
+                        // we are sure all canvas draw operations are complete.
+                        //
+                        // If mRun has been toggled false, inhibit canvas operations.
+                        synchronized (mRunLock) {
+                            if (mRun) doDraw(c);
+                        }
                     }
                 } finally {
                     // do this in a finally so that if an exception is thrown
@@ -372,7 +380,7 @@ class LunarView extends SurfaceView implements SurfaceHolder.Callback {
         /**
          * Dump game state to the provided Bundle. Typically called when the
          * Activity is being suspended.
-         * 
+         *
          * @return Bundle with this view's state
          */
         public Bundle saveState(Bundle map) {
@@ -400,7 +408,7 @@ class LunarView extends SurfaceView implements SurfaceHolder.Callback {
 
         /**
          * Sets the current difficulty.
-         * 
+         *
          * @param difficulty
          */
         public void setDifficulty(int difficulty) {
@@ -423,17 +431,21 @@ class LunarView extends SurfaceView implements SurfaceHolder.Callback {
          * Passing true allows the thread to run; passing false will shut it
          * down if it's already running. Calling start() after this was most
          * recently called with false will result in an immediate shutdown.
-         * 
+         *
          * @param b true to run, false to shut down
          */
         public void setRunning(boolean b) {
-            mRun = b;
+            // Do not allow mRun to be modified while any canvas operations
+            // are potentially in-flight. See doDraw().
+            synchronized (mRunLock) {
+                mRun = b;
+            }
         }
 
         /**
          * Sets the game mode. That is, whether we are running, paused, in the
          * failure state, in the victory state, etc.
-         * 
+         *
          * @see #setState(int, CharSequence)
          * @param mode one of the STATE_* constants
          */
@@ -446,7 +458,7 @@ class LunarView extends SurfaceView implements SurfaceHolder.Callback {
         /**
          * Sets the game mode. That is, whether we are running, paused, in the
          * failure state, in the victory state, etc.
-         * 
+         *
          * @param mode one of the STATE_* constants
          * @param message string to add to screen or null
          */
@@ -509,7 +521,7 @@ class LunarView extends SurfaceView implements SurfaceHolder.Callback {
                 mCanvasHeight = height;
 
                 // don't forget to resize the background image
-                mBackgroundImage = mBackgroundImage.createScaledBitmap(
+                mBackgroundImage = Bitmap.createScaledBitmap(
                         mBackgroundImage, width, height, true);
             }
         }
@@ -527,7 +539,7 @@ class LunarView extends SurfaceView implements SurfaceHolder.Callback {
 
         /**
          * Handles a key-down event.
-         * 
+         *
          * @param keyCode the key that was pressed
          * @param msg the original event object
          * @return true
@@ -538,8 +550,6 @@ class LunarView extends SurfaceView implements SurfaceHolder.Callback {
                 if (keyCode == KeyEvent.KEYCODE_DPAD_UP) okStart = true;
                 if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN) okStart = true;
                 if (keyCode == KeyEvent.KEYCODE_S) okStart = true;
-
-                boolean center = (keyCode == KeyEvent.KEYCODE_DPAD_UP);
 
                 if (okStart
                         && (mMode == STATE_READY || mMode == STATE_LOSE || mMode == STATE_WIN)) {
@@ -579,7 +589,7 @@ class LunarView extends SurfaceView implements SurfaceHolder.Callback {
 
         /**
          * Handles a key-up event.
-         * 
+         *
          * @param keyCode the key that was pressed
          * @param msg the original event object
          * @return true if the key was handled and consumed, or else false
@@ -807,7 +817,7 @@ class LunarView extends SurfaceView implements SurfaceHolder.Callback {
 
     /**
      * Fetches the animation thread corresponding to this LunarView.
-     * 
+     *
      * @return the animation thread
      */
     public LunarThread getThread() {

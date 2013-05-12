@@ -28,6 +28,7 @@
 #ifndef _WCHAR_H_
 #define _WCHAR_H_
 
+#include <limits.h>
 #include <sys/cdefs.h>
 #include <stdio.h>
 
@@ -50,7 +51,7 @@
 
 __BEGIN_DECLS
 
-typedef int                     wint_t;
+typedef __WINT_TYPE__           wint_t;
 typedef struct { int  dummy; }  mbstate_t;
 
 typedef enum {

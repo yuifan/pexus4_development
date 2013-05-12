@@ -17,11 +17,12 @@
 
 """TestSuite definition for Android instrumentation tests."""
 
-# python imports
 import os
+import re
 
 # local imports
-import coverage
+import android_manifest
+from coverage import coverage
 import errors
 import logger
 import test_suite
@@ -31,9 +32,6 @@ class InstrumentationTestSuite(test_suite.AbstractTestSuite):
   """Represents a java instrumentation test suite definition run on device."""
 
   DEFAULT_RUNNER = "android.test.InstrumentationTestRunner"
-
-  # dependency on libcore (used for Emma)
-  _LIBCORE_BUILD_PATH = "libcore"
 
   def __init__(self):
     test_suite.AbstractTestSuite.__init__(self)
@@ -86,8 +84,8 @@ class InstrumentationTestSuite(test_suite.AbstractTestSuite):
     return self
 
   def GetBuildDependencies(self, options):
-    if options.coverage:
-      return [self._LIBCORE_BUILD_PATH]
+    if options.coverage_target_path:
+      return [options.coverage_target_path]
     return []
 
   def Run(self, options, adb):
@@ -144,8 +142,11 @@ class InstrumentationTestSuite(test_suite.AbstractTestSuite):
       logger.Log(adb_cmd)
     elif options.coverage:
       coverage_gen = coverage.CoverageGenerator(adb)
-      adb.WaitForInstrumentation(self.GetPackageName(),
-                                 self.GetRunnerName())
+      if options.coverage_target_path:
+        coverage_target = coverage_gen.GetCoverageTargetForPath(options.coverage_target_path)
+      elif self.GetTargetName():
+        coverage_target = coverage_gen.GetCoverageTarget(self.GetTargetName())
+      self._CheckInstrumentationInstalled(adb)
       # need to parse test output to determine path to coverage file
       logger.Log("Running in coverage mode, suppressing test output")
       try:
@@ -163,17 +164,26 @@ class InstrumentationTestSuite(test_suite.AbstractTestSuite):
         return
 
       coverage_file = coverage_gen.ExtractReport(
-          self, device_coverage_path, test_qualifier=options.test_size)
+          self.GetName(), coverage_target, device_coverage_path,
+          test_qualifier=options.test_size)
       if coverage_file is not None:
         logger.Log("Coverage report generated at %s" % coverage_file)
+
     else:
-      adb.WaitForInstrumentation(self.GetPackageName(),
-                                 self.GetRunnerName())
-      adb.StartInstrumentationNoResults(
-          package_name=self.GetPackageName(),
-          runner_name=self.GetRunnerName(),
-          raw_mode=options.raw_mode,
-          instrumentation_args=instrumentation_args)
+      self._CheckInstrumentationInstalled(adb)
+      adb.StartInstrumentationNoResults(package_name=self.GetPackageName(),
+                                        runner_name=self.GetRunnerName(),
+                                        raw_mode=options.raw_mode,
+                                        instrumentation_args=
+                                        instrumentation_args)
+
+  def _CheckInstrumentationInstalled(self, adb):
+    if not adb.IsInstrumentationInstalled(self.GetPackageName(),
+                                          self.GetRunnerName()):
+      msg=("Could not find instrumentation %s/%s on device. Try forcing a "
+           "rebuild by updating a source file, and re-executing runtest." %
+           (self.GetPackageName(), self.GetRunnerName()))
+      raise errors.AbortError(msg=msg)
 
   def _PrintTestResults(self, test_results):
     """Prints a summary of test result data to stdout.
@@ -196,3 +206,153 @@ class InstrumentationTestSuite(test_suite.AbstractTestSuite):
       total_count+=1
     logger.Log("Tests run: %d, Failures: %d, Errors: %d" %
                (total_count, fail_count, error_count))
+
+def HasInstrumentationTest(path):
+  """Determine if given path defines an instrumentation test.
+
+  Args:
+    path: file system path to instrumentation test.
+  """
+  manifest_parser = android_manifest.CreateAndroidManifest(path)
+  if manifest_parser:
+    return manifest_parser.GetInstrumentationNames()
+  return False
+
+class InstrumentationTestFactory(test_suite.AbstractTestFactory):
+  """A factory for creating InstrumentationTestSuites"""
+
+  def __init__(self, test_root_path, build_path):
+    test_suite.AbstractTestFactory.__init__(self, test_root_path,
+                                            build_path)
+
+  def CreateTests(self, sub_tests_path=None):
+    """Create tests found in test_path.
+
+    Will create a single InstrumentationTestSuite based on info found in
+    AndroidManifest.xml found at build_path. Will set additional filters if
+    test_path refers to a java package or java class.
+    """
+    tests = []
+    class_name_arg = None
+    java_package_name = None
+    if sub_tests_path:
+      # if path is java file, populate class name
+      if self._IsJavaFile(sub_tests_path):
+        class_name_arg = self._GetClassNameFromFile(sub_tests_path)
+        logger.SilentLog('Using java test class %s' % class_name_arg)
+      elif self._IsJavaPackage(sub_tests_path):
+        java_package_name = self._GetPackageNameFromDir(sub_tests_path)
+        logger.SilentLog('Using java package %s' % java_package_name)
+    try:
+      manifest_parser = android_manifest.AndroidManifest(app_path=
+                                                         self.GetTestsRootPath())
+      instrs = manifest_parser.GetInstrumentationNames()
+      if not instrs:
+        logger.Log('Could not find instrumentation declarations in %s at %s' %
+                   (android_manifest.AndroidManifest.FILENAME,
+                    self.GetBuildPath()))
+        return tests
+
+      for instr_name in manifest_parser.GetInstrumentationNames():
+        pkg_name = manifest_parser.GetPackageName()
+        if instr_name.find(".") < 0:
+          instr_name = "." + instr_name
+        logger.SilentLog('Found instrumentation %s/%s' % (pkg_name, instr_name))
+        suite = InstrumentationTestSuite()
+        suite.SetPackageName(pkg_name)
+        suite.SetBuildPath(self.GetBuildPath())
+        suite.SetRunnerName(instr_name)
+        suite.SetName(pkg_name)
+        suite.SetClassName(class_name_arg)
+        suite.SetJavaPackageFilter(java_package_name)
+        # this is a bit of a hack, assume if 'com.android.cts' is in
+        # package name, this is a cts test
+        # this logic can be removed altogether when cts tests no longer require
+        # custom build steps
+        if suite.GetPackageName().startswith('com.android.cts'):
+          suite.SetSuite('cts')
+        tests.append(suite)
+      return tests
+
+    except:
+      logger.Log('Could not find or parse %s at %s' %
+                 (android_manifest.AndroidManifest.FILENAME,
+                  self.GetBuildPath()))
+    return tests
+
+  def _IsJavaFile(self, path):
+    """Returns true if given file system path is a java file."""
+    return os.path.isfile(path) and self._IsJavaFileName(path)
+
+  def _IsJavaFileName(self, filename):
+    """Returns true if given file name is a java file name."""
+    return os.path.splitext(filename)[1] == '.java'
+
+  def _IsJavaPackage(self, path):
+    """Returns true if given file path is a java package.
+
+    Currently assumes if any java file exists in this directory, than it
+    represents a java package.
+
+    Args:
+      path: file system path of directory to check
+
+    Returns:
+      True if path is a java package
+    """
+    if not os.path.isdir(path):
+      return False
+    for file_name in os.listdir(path):
+      if self._IsJavaFileName(file_name):
+        return True
+    return False
+
+  def _GetClassNameFromFile(self, java_file_path):
+    """Gets the fully qualified java class name from path.
+
+    Args:
+      java_file_path: file system path of java file
+
+    Returns:
+      fully qualified java class name or None.
+    """
+    package_name = self._GetPackageNameFromFile(java_file_path)
+    if package_name:
+      filename = os.path.basename(java_file_path)
+      class_name = os.path.splitext(filename)[0]
+      return '%s.%s' % (package_name, class_name)
+    return None
+
+  def _GetPackageNameFromDir(self, path):
+    """Gets the java package name associated with given directory path.
+
+    Caveat: currently just parses defined java package name from first java
+    file found in directory.
+
+    Args:
+      path: file system path of directory
+
+    Returns:
+      the java package name or None
+    """
+    for filename in os.listdir(path):
+      if self._IsJavaFileName(filename):
+        return self._GetPackageNameFromFile(os.path.join(path, filename))
+
+  def _GetPackageNameFromFile(self, java_file_path):
+    """Gets the java package name associated with given java file path.
+
+    Args:
+      java_file_path: file system path of java file
+
+    Returns:
+      the java package name or None
+    """
+    logger.SilentLog('Looking for java package name in %s' % java_file_path)
+    re_package = re.compile(r'package\s+(.*);')
+    file_handle = open(java_file_path, 'r')
+    for line in file_handle:
+      match = re_package.match(line)
+      if match:
+        return match.group(1)
+    return None

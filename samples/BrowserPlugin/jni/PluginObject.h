@@ -48,7 +48,7 @@ class SubPlugin {
 public:
     SubPlugin(NPP inst) : m_inst(inst) {}
     virtual ~SubPlugin() {}
-    virtual int16 handleEvent(const ANPEvent* evt) = 0;
+    virtual int16_t handleEvent(const ANPEvent* evt) = 0;
     virtual bool supportsDrawingModel(ANPDrawingModel) = 0;
 
     int getPluginWidth();
@@ -63,7 +63,7 @@ private:
 class SurfaceSubPlugin : public SubPlugin {
 public:
     SurfaceSubPlugin(NPP inst) : SubPlugin(inst) { m_context = NULL; }
-    virtual ~SurfaceSubPlugin() {}
+    virtual ~SurfaceSubPlugin();
     virtual jobject getSurface() = 0;
     virtual bool supportsDrawingModel(ANPDrawingModel);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2008, The Android Open Source Project
+ * Copyright 2010, The Android Open Source Project
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -24,29 +24,25 @@
  */
 
 #include "PluginObject.h"
+#include "AnimationThread.h"
 
 #ifndef pluginGraphics__DEFINED
 #define pluginGraphics__DEFINED
 
-class BallAnimation : public SubPlugin {
+class BallAnimation : public SurfaceSubPlugin {
 public:
     BallAnimation(NPP inst);
     virtual ~BallAnimation();
     virtual bool supportsDrawingModel(ANPDrawingModel);
-    virtual int16 handleEvent(const ANPEvent* evt);
+    virtual int16_t handleEvent(const ANPEvent* evt);
+
+    virtual jobject getSurface();
 private:
-    void drawPlugin(const ANPBitmap& bitmap, const ANPRectI& clip);
     void showEntirePluginOnScreen();
+    void destroySurface();
 
-    float m_x;
-    float m_y;
-    float m_dx;
-    float m_dy;
-
-    ANPRectF    m_oval;
-    ANPPaint*   m_paint;
-
-    static const float SCALE = 0.1;
+    jobject          m_surface;
+    AnimationThread* m_renderingThread;
 };
 
 #endif // pluginGraphics__DEFINED
